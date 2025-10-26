@@ -102,20 +102,20 @@ const checkRekCaptures = (board, toRow, toCol, currentPlayer) => {
     directions.forEach(([dir1, dir2]) => {
         const [dRow1, dCol1] = dir1;
         const [dRow2, dCol2] = dir2;
-        
+
         // Check positions on both sides of the moved piece
         const pos1Row = toRow + dRow1;
         const pos1Col = toCol + dCol1;
         const pos2Row = toRow + dRow2;
         const pos2Col = toCol + dCol2;
-        
+
         // Check if both positions are within bounds
         if (pos1Row >= 0 && pos1Row < 8 && pos1Col >= 0 && pos1Col < 8 &&
             pos2Row >= 0 && pos2Row < 8 && pos2Col >= 0 && pos2Col < 8) {
-            
+
             const piece1 = board[pos1Row][pos1Col];
             const piece2 = board[pos2Row][pos2Col];
-            
+
             // If both adjacent pieces are enemies, capture them
             if (opponentPieces.includes(piece1) && opponentPieces.includes(piece2)) {
                 board[pos1Row][pos1Col] = 'H';
@@ -230,24 +230,97 @@ const checkWinner = (board) => {
     return null;
 };
 
+// Helper function to broadcast room list
+const broadcastRoomList = () => {
+    const publicRooms = Array.from(rooms.values())
+        .filter(room => room.isPublic && !room.gameStarted)
+        .map(room => ({
+            id: room.id,
+            playerCount: room.players.length,
+            createdAt: room.createdAt
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt); // Newest first
+
+    io.emit('roomListUpdated', publicRooms);
+};
+
 // Socket connection handling
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    // Join room
-    socket.on('joinRoom', (roomId) => {
+    // Get room list
+    socket.on('getRoomList', () => {
+        const publicRooms = Array.from(rooms.values())
+            .filter(room => room.isPublic && !room.gameStarted)
+            .map(room => ({
+                id: room.id,
+                playerCount: room.players.length,
+                createdAt: room.createdAt
+            }))
+            .sort((a, b) => b.createdAt - a.createdAt); // Newest first
+
+        socket.emit('roomList', publicRooms);
+    });
+
+    // Create room
+    socket.on('createRoom', ({ roomId, isPublic }) => {
         socket.join(roomId);
 
         if (!rooms.has(roomId)) {
             rooms.set(roomId, {
+                id: roomId,
                 players: [],
                 board: createInitialBoard(),
                 currentPlayer: 'Blue', // Blue starts first in Rek
                 gameStarted: false,
                 playAgainVotes: new Set(),
                 chatMessages: [],
-                readyPlayers: new Set()
+                readyPlayers: new Set(),
+                isPublic: isPublic,
+                createdAt: Date.now()
             });
+
+            // Broadcast updated room list if it's a public room
+            if (isPublic) {
+                broadcastRoomList();
+            }
+        }
+
+        const room = rooms.get(roomId);
+
+        // Add player if room not full
+        if (room.players.length < 2) {
+            const playerColor = room.players.length === 0 ? 'Blue' : 'Red';
+            const playerPiece = room.players.length === 0 ? 'Blue' : 'Red';
+
+            room.players.push({
+                id: socket.id,
+                color: playerColor,
+                piece: playerPiece
+            });
+
+            socket.emit('playerAssigned', { color: playerColor, piece: playerPiece });
+
+            // Notify when both players joined
+            if (room.players.length === 2) {
+                io.to(roomId).emit('bothPlayersJoined');
+                // Update room list to show room as full
+                if (room.isPublic) {
+                    broadcastRoomList();
+                }
+            }
+        } else {
+            socket.emit('roomFull');
+        }
+    });
+
+    // Join room
+    socket.on('joinRoom', (roomId) => {
+        socket.join(roomId);
+
+        if (!rooms.has(roomId)) {
+            socket.emit('roomNotFound');
+            return;
         }
 
         const room = rooms.get(roomId);
@@ -388,12 +461,21 @@ io.on('connection', (socket) => {
         for (const [roomId, room] of rooms.entries()) {
             const playerIndex = room.players.findIndex(p => p.id === socket.id);
             if (playerIndex !== -1) {
+                const wasPublic = room.isPublic;
                 room.players.splice(playerIndex, 1);
 
                 if (room.players.length === 0) {
                     rooms.delete(roomId);
+                    // Update room list if it was a public room
+                    if (wasPublic) {
+                        broadcastRoomList();
+                    }
                 } else {
                     socket.to(roomId).emit('playerDisconnected');
+                    // Update room list to show room as available again
+                    if (wasPublic) {
+                        broadcastRoomList();
+                    }
                 }
                 break;
             }

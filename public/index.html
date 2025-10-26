@@ -20,15 +20,49 @@
             <p class="subtitle">Temple of Ancient Strategy</p>
         </div>
         
-        <div class="menu-container">
-            <div class="menu-card">
-                <h2>Enter the Sacred Temple</h2>
-                <div class="input-group">
-                    <input type="text" id="roomInput" placeholder="Enter Room Code" maxlength="10">
-                    <button id="joinRoomBtn" class="btn-primary">Join Temple</button>
+        <div class="lobby-container">
+            <!-- Create Room Section -->
+            <div class="lobby-section">
+                <h2>🏛️ Create Temple</h2>
+                <div class="create-room-card">
+                    <div class="room-settings">
+                        <label class="room-setting">
+                            <input type="radio" name="roomType" value="public" checked>
+                            <span class="radio-label">🌍 Public Temple</span>
+                            <small>Visible in temple list for everyone</small>
+                        </label>
+                        <label class="room-setting">
+                            <input type="radio" name="roomType" value="private">
+                            <span class="radio-label">🔒 Private Temple</span>
+                            <small>Hidden, only accessible with room code</small>
+                        </label>
+                    </div>
+                    <button id="createRoomBtn" class="btn-primary">Create Temple</button>
                 </div>
-                <div class="divider">or</div>
-                <button id="createRoomBtn" class="btn-secondary">Create New Temple</button>
+            </div>
+
+            <!-- Join Room Section -->
+            <div class="lobby-section">
+                <h2>🚪 Join Temple</h2>
+                <div class="join-room-card">
+                    <div class="input-group">
+                        <input type="text" id="roomInput" placeholder="Enter Room Code" maxlength="10">
+                        <button id="joinRoomBtn" class="btn-primary">Join Temple</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room List Section -->
+            <div class="lobby-section">
+                <h2>🏯 Public Temples</h2>
+                <div class="room-list-card">
+                    <div class="room-list-header">
+                        <button id="refreshRoomsBtn" class="btn-secondary small">🔄 Refresh</button>
+                    </div>
+                    <div id="roomList" class="room-list">
+                        <div class="loading-rooms">Loading temples...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

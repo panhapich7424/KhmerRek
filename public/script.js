@@ -23,6 +23,8 @@ const elements = {
     roomInput: document.getElementById('roomInput'),
     joinRoomBtn: document.getElementById('joinRoomBtn'),
     createRoomBtn: document.getElementById('createRoomBtn'),
+    refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
+    roomList: document.getElementById('roomList'),
     gameBoard: document.getElementById('gameBoard'),
     roomCode: document.getElementById('roomCode'),
     copyRoomBtn: document.getElementById('copyRoomBtn'),
@@ -372,14 +374,64 @@ const hideGameOverModal = () => {
     elements.gameOverModal.classList.remove('active');
 };
 
-// Event listeners
-elements.createRoomBtn.addEventListener('click', () => {
-    const roomId = generateRoomCode();
+// Room management functions
+const refreshRoomList = () => {
+    socket.emit('getRoomList');
+    elements.roomList.innerHTML = '<div class="loading-rooms">Loading temples...</div>';
+};
+
+const displayRoomList = (rooms) => {
+    if (rooms.length === 0) {
+        elements.roomList.innerHTML = '<div class="no-rooms">No public temples available</div>';
+        return;
+    }
+    
+    elements.roomList.innerHTML = '';
+    
+    rooms.forEach(room => {
+        const roomItem = document.createElement('div');
+        roomItem.className = 'room-item';
+        
+        const isAvailable = room.playerCount < 2;
+        const statusClass = isAvailable ? 'status-available' : 'status-full';
+        const statusText = isAvailable ? 'Available' : 'Full';
+        
+        roomItem.innerHTML = `
+            <div class="room-info">
+                <div class="room-code">${room.id}</div>
+                <div class="room-status">
+                    <span class="status-indicator ${statusClass}"></span>
+                    ${statusText} (${room.playerCount}/2)
+                </div>
+            </div>
+            <button class="join-room-btn" ${!isAvailable ? 'disabled' : ''} 
+                    onclick="joinRoomFromList('${room.id}')">
+                ${isAvailable ? 'Join' : 'Full'}
+            </button>
+        `;
+        
+        elements.roomList.appendChild(roomItem);
+    });
+};
+
+// Make this function globally accessible
+window.joinRoomFromList = (roomId) => {
     gameState.roomId = roomId;
     elements.roomCode.textContent = `Room: ${roomId}`;
     
     showScreen('loadingScreen');
     socket.emit('joinRoom', roomId);
+};
+
+// Event listeners
+elements.createRoomBtn.addEventListener('click', () => {
+    const roomType = document.querySelector('input[name="roomType"]:checked').value;
+    const roomId = generateRoomCode();
+    gameState.roomId = roomId;
+    elements.roomCode.textContent = `Room: ${roomId}`;
+    
+    showScreen('loadingScreen');
+    socket.emit('createRoom', { roomId, isPublic: roomType === 'public' });
 });
 
 elements.joinRoomBtn.addEventListener('click', () => {
@@ -394,6 +446,10 @@ elements.joinRoomBtn.addEventListener('click', () => {
     
     showScreen('loadingScreen');
     socket.emit('joinRoom', roomId);
+});
+
+elements.refreshRoomsBtn.addEventListener('click', () => {
+    refreshRoomList();
 });
 
 elements.roomInput.addEventListener('keypress', (e) => {
@@ -599,6 +655,11 @@ socket.on('roomFull', () => {
     showNotification('This temple chamber is full. Try another room.', 'error');
 });
 
+socket.on('roomNotFound', () => {
+    showScreen('mainMenu');
+    showNotification('This temple chamber does not exist.', 'error');
+});
+
 socket.on('playerDisconnected', () => {
     gameState.gameStarted = false;
     elements.statusMessage.textContent = 'Your opponent has left the temple. Waiting for reconnection...';
@@ -613,6 +674,14 @@ socket.on('newMessage', ({ player, message }) => {
     addChatMessage(player, message);
 });
 
+socket.on('roomList', (rooms) => {
+    displayRoomList(rooms);
+});
+
+socket.on('roomListUpdated', (rooms) => {
+    displayRoomList(rooms);
+});
+
 socket.on('disconnect', () => {
     console.log('Disconnected from temple server');
     showNotification('Connection to temple lost. Attempting to reconnect...', 'error');
@@ -621,6 +690,11 @@ socket.on('disconnect', () => {
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
     showScreen('mainMenu');
+    
+    // Load room list when page loads
+    setTimeout(() => {
+        refreshRoomList();
+    }, 1000);
     
     // Add some dynamic particles
     const particles = document.querySelector('.particles');
