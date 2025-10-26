@@ -1,0 +1,20 @@
+{
+  "name": "khmer-checkers",
+  "version": "1.0.0",
+  "description": "Real-time multiplayer Checkers game with Cambodian fantasy temple theme",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["checkers", "multiplayer", "cambodian", "temple", "game"],
+  "author": "Kiro AI",
+  "license": "MIT"
+}
