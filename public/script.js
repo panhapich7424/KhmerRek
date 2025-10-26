@@ -25,6 +25,7 @@ const elements = {
     createRoomBtn: document.getElementById('createRoomBtn'),
     gameBoard: document.getElementById('gameBoard'),
     roomCode: document.getElementById('roomCode'),
+    copyRoomBtn: document.getElementById('copyRoomBtn'),
     statusMessage: document.getElementById('statusMessage'),
     redTurn: document.getElementById('redTurn'),
     blueTurn: document.getElementById('blueTurn'),
@@ -316,12 +317,56 @@ elements.exitGameBtn.addEventListener('click', () => {
     });
 });
 
+elements.copyRoomBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(gameState.roomId).then(() => {
+        showNotification('Room code copied to clipboard!', 'info');
+        elements.copyRoomBtn.textContent = '✅ Copied';
+        setTimeout(() => {
+            elements.copyRoomBtn.textContent = '📋 Copy';
+        }, 2000);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = gameState.roomId;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('Room code copied!', 'info');
+    });
+});
+
 // Socket event listeners
 socket.on('playerAssigned', ({ color, piece }) => {
     gameState.playerColor = color;
     gameState.playerPiece = piece;
     
     showNotification(`You are the ${color} Temple Guardian`, 'info');
+    
+    // Show game screen immediately but with waiting message
+    showScreen('gameScreen');
+    createBoard();
+    
+    // Show initial board setup
+    const initialBoard = [
+        ['O','H','O','H','O','H','O','H'],
+        ['H','O','H','O','H','O','H','O'],
+        ['O','H','O','H','O','H','O','H'],
+        ['H','H','H','H','H','H','H','H'],
+        ['H','H','H','H','H','H','H','H'],
+        ['X','H','X','H','X','H','X','H'],
+        ['H','X','H','X','H','X','H','X'],
+        ['X','H','X','H','X','H','X','H']
+    ];
+    updateBoard(initialBoard);
+    
+    if (color === 'Red') {
+        elements.statusMessage.textContent = `Share room code "${gameState.roomId}" with a friend to start playing!`;
+        showNotification(`Room created! Share code: ${gameState.roomId}`, 'info');
+        elements.copyRoomBtn.style.display = 'block';
+    } else {
+        elements.statusMessage.textContent = `Joined room ${gameState.roomId}. Waiting for game to start...`;
+    }
 });
 
 socket.on('startGame', ({ board, currentPlayer, players }) => {
@@ -332,6 +377,9 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
     createBoard();
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
+    
+    // Hide copy button when game starts
+    elements.copyRoomBtn.style.display = 'none';
     
     showNotification('The sacred battle begins!', 'info');
     

@@ -279,6 +279,25 @@ input[type="text"]::placeholder {
     font-size: 1.2rem;
     font-weight: bold;
     color: #d4af37;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.copy-btn {
+    padding: 5px 10px;
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid #d4af37;
+    border-radius: 5px;
+    color: #d4af37;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.copy-btn:hover {
+    background: rgba(212, 175, 55, 0.3);
+    transform: translateY(-1px);
 }
 
 /* Game Board Styles */
