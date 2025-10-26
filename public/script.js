@@ -45,7 +45,8 @@ const elements = {
     gameStartControls: document.getElementById('gameStartControls'),
     startGameBtn: document.getElementById('startGameBtn'),
     gameStartCountdown: document.getElementById('gameStartCountdown'),
-    countdownNumber: document.getElementById('countdownNumber')
+    countdownNumber: document.getElementById('countdownNumber'),
+    orientationText: document.getElementById('orientationText')
 };
 
 // Utility functions
@@ -141,13 +142,17 @@ const setupPlayerDisplay = () => {
         elements.bottomPlayerName.textContent = 'You (Blue)';
         elements.topPlayerPiece.className = 'player-piece red-piece';
         elements.topPlayerName.textContent = 'Opponent (Red)';
+        elements.orientationText.textContent = 'Your Blue pieces are at the bottom';
     } else {
-        // Red player: Red at bottom, Blue at top
+        // Red player: Red at bottom, Blue at top (rotated view)
         elements.bottomPlayerPiece.className = 'player-piece red-piece';
         elements.bottomPlayerName.textContent = 'You (Red)';
         elements.topPlayerPiece.className = 'player-piece blue-piece';
         elements.topPlayerName.textContent = 'Opponent (Blue)';
+        elements.orientationText.textContent = 'Your Red pieces are at the bottom (rotated view)';
     }
+    
+    console.log(`Player perspective: ${gameState.playerColor}, Board will be ${gameState.playerColor === 'Red' ? 'rotated 180°' : 'normal'}`);
 };
 
 const updateBoard = (board) => {
@@ -486,14 +491,14 @@ socket.on('playerAssigned', ({ color, piece }) => {
     
     // Show initial board setup for Rek game
     const initialBoard = [
-        ['O','O','O','O','O','O','O','H'],
-        ['H','H','H','H','H','H','H','P'],
-        ['O','O','O','O','O','O','O','O'],
-        ['H','H','H','H','H','H','H','H'],
-        ['H','H','H','H','H','H','H','H'],
-        ['X','X','X','X','X','X','X','X'],
-        ['R','H','H','H','H','H','H','H'],
-        ['H','X','X','X','X','X','X','X']
+        ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
+        ['R','H','H','H','H','H','H','H'],  // Row 1: Red King
+        ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
+        ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
+        ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
+        ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
+        ['H','H','H','H','H','H','H','P'],  // Row 6: Blue King
+        ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
     ];
     updateBoard(initialBoard);
     

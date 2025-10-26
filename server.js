@@ -16,14 +16,14 @@ const rooms = new Map();
 // Initial board setup for Rek game
 const createInitialBoard = () => {
     return [
-        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'H'],
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'P'],
-        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-        ['R', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-        ['H', 'X', 'X', 'X', 'X', 'X', 'X', 'X']
+        ['H', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 0: Red pieces at top
+        ['R', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 1: Red King
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
+        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'P'],  // Row 6: Blue King
+        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'H']   // Row 7: Blue pieces at bottom
     ];
 };
 
@@ -46,17 +46,17 @@ const isValidMove = (board, from, to, currentPlayer) => {
     // Must move horizontally or vertically (like a rook)
     const rowDiff = toRow - fromRow;
     const colDiff = toCol - fromCol;
-    
+
     // Must be either horizontal or vertical movement
     if (rowDiff !== 0 && colDiff !== 0) return false;
-    
+
     // Check path is clear (no pieces in between)
     const stepRow = rowDiff === 0 ? 0 : (rowDiff > 0 ? 1 : -1);
     const stepCol = colDiff === 0 ? 0 : (colDiff > 0 ? 1 : -1);
-    
+
     let currentRow = fromRow + stepRow;
     let currentCol = fromCol + stepCol;
-    
+
     while (currentRow !== toRow || currentCol !== toCol) {
         if (board[currentRow][currentCol] !== 'H') {
             return false; // Path blocked
@@ -64,7 +64,7 @@ const isValidMove = (board, from, to, currentPlayer) => {
         currentRow += stepRow;
         currentCol += stepCol;
     }
-    
+
     return true;
 };
 
@@ -93,39 +93,35 @@ const checkRekCaptures = (board, toRow, toCol, currentPlayer) => {
     const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     const opponentPieces = currentPlayer === 'Blue' ? ['X', 'R'] : ['O', 'P'];
 
-    // Check if the moved piece creates a sandwich in any direction
+    // Check horizontal and vertical directions for Rek captures
     const directions = [
-        [0, 1],   // Right
-        [0, -1],  // Left
-        [1, 0],   // Down
-        [-1, 0]   // Up
+        [[0, -1], [0, 1]],   // Left and Right
+        [[-1, 0], [1, 0]]    // Up and Down
     ];
 
-    directions.forEach(([dRow, dCol]) => {
-        // Look for enemy pieces in this direction
-        let checkRow = toRow + dRow;
-        let checkCol = toCol + dCol;
-        const enemiesToCapture = [];
-
-        // Collect consecutive enemy pieces
-        while (checkRow >= 0 && checkRow < 8 && checkCol >= 0 && checkCol < 8) {
-            const piece = board[checkRow][checkCol];
-
-            if (opponentPieces.includes(piece)) {
-                enemiesToCapture.push([checkRow, checkCol]);
-            } else if (playerPieces.includes(piece)) {
-                // Found our piece - capture all enemies in between
-                enemiesToCapture.forEach(([enemyRow, enemyCol]) => {
-                    board[enemyRow][enemyCol] = 'H';
-                });
-                break;
-            } else {
-                // Empty space - no capture
-                break;
+    directions.forEach(([dir1, dir2]) => {
+        const [dRow1, dCol1] = dir1;
+        const [dRow2, dCol2] = dir2;
+        
+        // Check positions on both sides of the moved piece
+        const pos1Row = toRow + dRow1;
+        const pos1Col = toCol + dCol1;
+        const pos2Row = toRow + dRow2;
+        const pos2Col = toCol + dCol2;
+        
+        // Check if both positions are within bounds
+        if (pos1Row >= 0 && pos1Row < 8 && pos1Col >= 0 && pos1Col < 8 &&
+            pos2Row >= 0 && pos2Row < 8 && pos2Col >= 0 && pos2Col < 8) {
+            
+            const piece1 = board[pos1Row][pos1Col];
+            const piece2 = board[pos2Row][pos2Col];
+            
+            // If both adjacent pieces are enemies, capture them
+            if (opponentPieces.includes(piece1) && opponentPieces.includes(piece2)) {
+                board[pos1Row][pos1Col] = 'H';
+                board[pos2Row][pos2Col] = 'H';
+                console.log(`Rek capture! ${currentPlayer} captured pieces at (${pos1Row},${pos1Col}) and (${pos2Row},${pos2Col})`);
             }
-
-            checkRow += dRow;
-            checkCol += dCol;
         }
     });
 };
