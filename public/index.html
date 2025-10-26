@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏯 Khmer Checkers - Temple of Strategy</title>
+    <title>🏯 Khmer Rek - Temple of Strategy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Koulen&family=Preahvihear&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
     <!-- Main Menu Screen -->
     <div id="mainMenu" class="screen active">
         <div class="temple-header">
-            <h1 class="game-title">🏯 Khmer Checkers</h1>
+            <h1 class="game-title">🏯 Khmer Rek</h1>
             <p class="subtitle">Temple of Ancient Strategy</p>
         </div>
         
@@ -65,6 +65,20 @@
         <!-- Game Status -->
         <div class="game-status">
             <p id="statusMessage">Waiting for opponent...</p>
+        </div>
+        
+        <!-- Chat Box -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <h3>Temple Chat</h3>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type your message..." maxlength="100">
+                <button id="sendMessageBtn">Send</button>
+            </div>
         </div>
     </div>
     

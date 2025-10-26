@@ -6,7 +6,7 @@ let gameState = {
     roomId: null,
     playerColor: null,
     playerPiece: null,
-    currentPlayer: 'X',
+    currentPlayer: 'Blue',
     board: [],
     selectedSquare: null,
     gameStarted: false
@@ -34,7 +34,10 @@ const elements = {
     winnerMessage: document.getElementById('winnerMessage'),
     playAgainBtn: document.getElementById('playAgainBtn'),
     exitGameBtn: document.getElementById('exitGameBtn'),
-    bgMusic: document.getElementById('bgMusic')
+    bgMusic: document.getElementById('bgMusic'),
+    chatMessages: document.getElementById('chatMessages'),
+    messageInput: document.getElementById('messageInput'),
+    sendMessageBtn: document.getElementById('sendMessageBtn')
 };
 
 // Utility functions
@@ -102,7 +105,13 @@ const updateBoard = (board) => {
             if (piece !== 'H') {
                 const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
                 const pieceElement = document.createElement('div');
-                pieceElement.className = `game-piece ${piece === 'X' ? 'red' : 'blue'}`;
+                let pieceClass = '';
+                if (piece === 'X') pieceClass = 'red';
+                else if (piece === 'O') pieceClass = 'blue';
+                else if (piece === 'R') pieceClass = 'red king';
+                else if (piece === 'P') pieceClass = 'blue king';
+                
+                pieceElement.className = `game-piece ${pieceClass}`;
                 pieceElement.dataset.row = row;
                 pieceElement.dataset.col = col;
                 
@@ -142,14 +151,15 @@ const handleSquareClick = (row, col) => {
 };
 
 const handlePieceClick = (row, col) => {
-    if (!gameState.gameStarted || gameState.playerPiece !== gameState.currentPlayer) {
+    if (!gameState.gameStarted || gameState.playerColor !== gameState.currentPlayer) {
         return;
     }
     
     const piece = gameState.board[row][col];
     
-    // Only allow selecting own pieces
-    if (piece === gameState.playerPiece) {
+    // Check if piece belongs to current player
+    const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
+    if (playerPieces.includes(piece)) {
         clearSelection();
         selectPiece(row, col);
     }
@@ -171,25 +181,15 @@ const selectPiece = (row, col) => {
 
 const showValidMoves = (fromRow, fromCol) => {
     const directions = [
-        [-1, -1], [-1, 1], [1, -1], [1, 1] // Diagonal directions
+        [-1, 0], [1, 0], [0, -1], [0, 1] // Horizontal and vertical directions
     ];
     
     directions.forEach(([dRow, dCol]) => {
-        // Regular move (one step)
         const newRow = fromRow + dRow;
         const newCol = fromCol + dCol;
         
         if (isValidMove(fromRow, fromCol, newRow, newCol)) {
             const square = document.querySelector(`[data-row="${newRow}"][data-col="${newCol}"]`);
-            if (square) square.classList.add('valid-move');
-        }
-        
-        // Capture move (two steps)
-        const jumpRow = fromRow + dRow * 2;
-        const jumpCol = fromCol + dCol * 2;
-        
-        if (isValidMove(fromRow, fromCol, jumpRow, jumpCol)) {
-            const square = document.querySelector(`[data-row="${jumpRow}"][data-col="${jumpCol}"]`);
             if (square) square.classList.add('valid-move');
         }
     });
@@ -203,31 +203,16 @@ const isValidMove = (fromRow, fromCol, toRow, toCol) => {
     if (gameState.board[toRow][toCol] !== 'H') return false;
     
     // Check if piece belongs to current player
-    if (gameState.board[fromRow][fromCol] !== gameState.currentPlayer) return false;
+    const piece = gameState.board[fromRow][fromCol];
+    const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
+    if (!playerPieces.includes(piece)) return false;
     
-    const rowDiff = toRow - fromRow;
+    // Check horizontal or vertical movement (one cell only)
+    const rowDiff = Math.abs(toRow - fromRow);
     const colDiff = Math.abs(toCol - fromCol);
     
-    // Regular move (one diagonal step)
-    if (Math.abs(rowDiff) === 1 && colDiff === 1) {
-        // Check direction based on player
-        if (gameState.currentPlayer === 'X' && rowDiff > 0) return false; // Red moves up
-        if (gameState.currentPlayer === 'O' && rowDiff < 0) return false; // Blue moves down
-        return true;
-    }
-    
-    // Capture move (two diagonal steps)
-    if (Math.abs(rowDiff) === 2 && colDiff === 2) {
-        const middleRow = fromRow + rowDiff / 2;
-        const middleCol = fromCol + (toCol - fromCol) / 2;
-        const middlePiece = gameState.board[middleRow][middleCol];
-        
-        // Check if there's an opponent piece to capture
-        const opponent = gameState.currentPlayer === 'X' ? 'O' : 'X';
-        return middlePiece === opponent;
-    }
-    
-    return false;
+    // Must move exactly one cell horizontally or vertically
+    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
 };
 
 const clearSelection = () => {
@@ -248,10 +233,10 @@ const clearSelection = () => {
 };
 
 const updateTurnIndicator = (currentPlayer) => {
-    elements.redTurn.classList.toggle('active', currentPlayer === 'X');
-    elements.blueTurn.classList.toggle('active', currentPlayer === 'O');
+    elements.redTurn.classList.toggle('active', currentPlayer === 'Red');
+    elements.blueTurn.classList.toggle('active', currentPlayer === 'Blue');
     
-    const isMyTurn = gameState.playerPiece === currentPlayer;
+    const isMyTurn = gameState.playerColor === currentPlayer;
     elements.statusMessage.textContent = isMyTurn 
         ? "Your turn - Choose your move wisely!" 
         : "Opponent's turn - The temple awaits...";
@@ -336,6 +321,36 @@ elements.copyRoomBtn.addEventListener('click', () => {
     });
 });
 
+elements.sendMessageBtn.addEventListener('click', () => {
+    sendMessage();
+});
+
+elements.messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+const sendMessage = () => {
+    const message = elements.messageInput.value.trim();
+    if (message && gameState.roomId) {
+        socket.emit('sendMessage', {
+            roomId: gameState.roomId,
+            message: message
+        });
+        elements.messageInput.value = '';
+    }
+};
+
+const addChatMessage = (player, message) => {
+    const messageElement = document.createElement('div');
+    messageElement.className = `chat-message ${player.toLowerCase()}`;
+    messageElement.textContent = `${player}: ${message}`;
+    
+    elements.chatMessages.appendChild(messageElement);
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+};
+
 // Socket event listeners
 socket.on('playerAssigned', ({ color, piece }) => {
     gameState.playerColor = color;
@@ -347,16 +362,16 @@ socket.on('playerAssigned', ({ color, piece }) => {
     showScreen('gameScreen');
     createBoard();
     
-    // Show initial board setup
+    // Show initial board setup for Rek game
     const initialBoard = [
-        ['O','H','O','H','O','H','O','H'],
-        ['H','O','H','O','H','O','H','O'],
-        ['O','H','O','H','O','H','O','H'],
+        ['O','O','O','O','O','O','O','H'],
+        ['H','H','H','H','H','H','H','P'],
+        ['O','O','O','O','O','O','O','O'],
         ['H','H','H','H','H','H','H','H'],
         ['H','H','H','H','H','H','H','H'],
-        ['X','H','X','H','X','H','X','H'],
-        ['H','X','H','X','H','X','H','X'],
-        ['X','H','X','H','X','H','X','H']
+        ['X','X','X','X','X','X','X','X'],
+        ['R','H','H','H','H','H','H','H'],
+        ['H','X','X','X','X','X','X','X']
     ];
     updateBoard(initialBoard);
     
@@ -446,6 +461,10 @@ socket.on('playerDisconnected', () => {
 
 socket.on('connect', () => {
     console.log('Connected to temple server');
+});
+
+socket.on('newMessage', ({ player, message }) => {
+    addChatMessage(player, message);
 });
 
 socket.on('disconnect', () => {
