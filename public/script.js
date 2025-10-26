@@ -27,8 +27,12 @@ const elements = {
     roomCode: document.getElementById('roomCode'),
     copyRoomBtn: document.getElementById('copyRoomBtn'),
     statusMessage: document.getElementById('statusMessage'),
-    redTurn: document.getElementById('redTurn'),
-    blueTurn: document.getElementById('blueTurn'),
+    topPlayerPiece: document.getElementById('topPlayerPiece'),
+    topPlayerName: document.getElementById('topPlayerName'),
+    topPlayerTurn: document.getElementById('topPlayerTurn'),
+    bottomPlayerPiece: document.getElementById('bottomPlayerPiece'),
+    bottomPlayerName: document.getElementById('bottomPlayerName'),
+    bottomPlayerTurn: document.getElementById('bottomPlayerTurn'),
     gameOverModal: document.getElementById('gameOverModal'),
     winnerText: document.getElementById('winnerText'),
     winnerMessage: document.getElementById('winnerMessage'),
@@ -92,16 +96,67 @@ const createBoard = () => {
     }
 };
 
+// Rotate board based on player perspective
+const getRotatedBoard = (board) => {
+    if (gameState.playerColor === 'Red') {
+        // Rotate 180 degrees for Red player
+        const rotated = [];
+        for (let row = 7; row >= 0; row--) {
+            const newRow = [];
+            for (let col = 7; col >= 0; col--) {
+                newRow.push(board[row][col]);
+            }
+            rotated.push(newRow);
+        }
+        return rotated;
+    }
+    return board; // Blue player sees normal board
+};
+
+// Convert display coordinates to actual board coordinates
+const getActualCoordinates = (displayRow, displayCol) => {
+    if (gameState.playerColor === 'Red') {
+        return [7 - displayRow, 7 - displayCol];
+    }
+    return [displayRow, displayCol];
+};
+
+// Convert actual coordinates to display coordinates
+const getDisplayCoordinates = (actualRow, actualCol) => {
+    if (gameState.playerColor === 'Red') {
+        return [7 - actualRow, 7 - actualCol];
+    }
+    return [actualRow, actualCol];
+};
+
+// Setup player display based on perspective
+const setupPlayerDisplay = () => {
+    if (gameState.playerColor === 'Blue') {
+        // Blue player: Blue at bottom, Red at top
+        elements.bottomPlayerPiece.className = 'player-piece blue-piece';
+        elements.bottomPlayerName.textContent = 'You (Blue)';
+        elements.topPlayerPiece.className = 'player-piece red-piece';
+        elements.topPlayerName.textContent = 'Opponent (Red)';
+    } else {
+        // Red player: Red at bottom, Blue at top
+        elements.bottomPlayerPiece.className = 'player-piece red-piece';
+        elements.bottomPlayerName.textContent = 'You (Red)';
+        elements.topPlayerPiece.className = 'player-piece blue-piece';
+        elements.topPlayerName.textContent = 'Opponent (Blue)';
+    }
+};
+
 const updateBoard = (board) => {
     gameState.board = board;
+    const displayBoard = getRotatedBoard(board);
     
     // Clear all pieces
     document.querySelectorAll('.game-piece').forEach(piece => piece.remove());
     
-    // Add pieces based on board state
+    // Add pieces based on rotated board state
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            const piece = board[row][col];
+            const piece = displayBoard[row][col];
             if (piece !== 'H') {
                 const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
                 const pieceElement = document.createElement('div');
@@ -126,22 +181,22 @@ const updateBoard = (board) => {
     }
 };
 
-const handleSquareClick = (row, col) => {
-    if (!gameState.gameStarted || gameState.playerPiece !== gameState.currentPlayer) {
+const handleSquareClick = (displayRow, displayCol) => {
+    if (!gameState.gameStarted || gameState.playerColor !== gameState.currentPlayer) {
         return;
     }
     
-    const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    const square = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
     
     if (gameState.selectedSquare && square.classList.contains('valid-move')) {
-        // Make move
-        const from = [gameState.selectedSquare.row, gameState.selectedSquare.col];
-        const to = [row, col];
+        // Convert display coordinates to actual board coordinates
+        const actualFrom = getActualCoordinates(gameState.selectedSquare.row, gameState.selectedSquare.col);
+        const actualTo = getActualCoordinates(displayRow, displayCol);
         
         socket.emit('makeMove', {
             roomId: gameState.roomId,
-            from: from,
-            to: to
+            from: actualFrom,
+            to: actualTo
         });
         
         clearSelection();
@@ -150,66 +205,73 @@ const handleSquareClick = (row, col) => {
     }
 };
 
-const handlePieceClick = (row, col) => {
+const handlePieceClick = (displayRow, displayCol) => {
     if (!gameState.gameStarted || gameState.playerColor !== gameState.currentPlayer) {
         return;
     }
     
-    const piece = gameState.board[row][col];
+    // Convert display coordinates to actual board coordinates
+    const [actualRow, actualCol] = getActualCoordinates(displayRow, displayCol);
+    const piece = gameState.board[actualRow][actualCol];
     
     // Check if piece belongs to current player
     const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     if (playerPieces.includes(piece)) {
         clearSelection();
-        selectPiece(row, col);
+        selectPiece(displayRow, displayCol);
     }
 };
 
-const selectPiece = (row, col) => {
-    gameState.selectedSquare = { row, col };
+const selectPiece = (displayRow, displayCol) => {
+    gameState.selectedSquare = { row: displayRow, col: displayCol };
     
     // Highlight selected piece
-    const piece = document.querySelector(`[data-row="${row}"][data-col="${col}"] .game-piece`);
-    const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    const piece = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"] .game-piece`);
+    const square = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
     
     if (piece) piece.classList.add('selected');
     if (square) square.classList.add('selected');
     
     // Show valid moves
-    showValidMoves(row, col);
+    showValidMoves(displayRow, displayCol);
 };
 
-const showValidMoves = (fromRow, fromCol) => {
+const showValidMoves = (displayFromRow, displayFromCol) => {
+    // Convert to actual coordinates for validation
+    const [actualFromRow, actualFromCol] = getActualCoordinates(displayFromRow, displayFromCol);
+    
     const directions = [
         [-1, 0], [1, 0], [0, -1], [0, 1] // Horizontal and vertical directions
     ];
     
     directions.forEach(([dRow, dCol]) => {
-        const newRow = fromRow + dRow;
-        const newCol = fromCol + dCol;
+        const actualToRow = actualFromRow + dRow;
+        const actualToCol = actualFromCol + dCol;
         
-        if (isValidMove(fromRow, fromCol, newRow, newCol)) {
-            const square = document.querySelector(`[data-row="${newRow}"][data-col="${newCol}"]`);
+        if (isValidMove(actualFromRow, actualFromCol, actualToRow, actualToCol)) {
+            // Convert back to display coordinates
+            const [displayToRow, displayToCol] = getDisplayCoordinates(actualToRow, actualToCol);
+            const square = document.querySelector(`[data-row="${displayToRow}"][data-col="${displayToCol}"]`);
             if (square) square.classList.add('valid-move');
         }
     });
 };
 
-const isValidMove = (fromRow, fromCol, toRow, toCol) => {
+const isValidMove = (actualFromRow, actualFromCol, actualToRow, actualToCol) => {
     // Check bounds
-    if (toRow < 0 || toRow >= 8 || toCol < 0 || toCol >= 8) return false;
+    if (actualToRow < 0 || actualToRow >= 8 || actualToCol < 0 || actualToCol >= 8) return false;
     
     // Check if destination is empty
-    if (gameState.board[toRow][toCol] !== 'H') return false;
+    if (gameState.board[actualToRow][actualToCol] !== 'H') return false;
     
     // Check if piece belongs to current player
-    const piece = gameState.board[fromRow][fromCol];
+    const piece = gameState.board[actualFromRow][actualFromCol];
     const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     if (!playerPieces.includes(piece)) return false;
     
     // Check horizontal or vertical movement (one cell only)
-    const rowDiff = Math.abs(toRow - fromRow);
-    const colDiff = Math.abs(toCol - fromCol);
+    const rowDiff = Math.abs(actualToRow - actualFromRow);
+    const colDiff = Math.abs(actualToCol - actualFromCol);
     
     // Must move exactly one cell horizontally or vertically
     return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
@@ -233,10 +295,12 @@ const clearSelection = () => {
 };
 
 const updateTurnIndicator = (currentPlayer) => {
-    elements.redTurn.classList.toggle('active', currentPlayer === 'Red');
-    elements.blueTurn.classList.toggle('active', currentPlayer === 'Blue');
-    
     const isMyTurn = gameState.playerColor === currentPlayer;
+    
+    // Update turn indicators based on perspective
+    elements.bottomPlayerTurn.classList.toggle('active', isMyTurn);
+    elements.topPlayerTurn.classList.toggle('active', !isMyTurn);
+    
     elements.statusMessage.textContent = isMyTurn 
         ? "Your turn - Choose your move wisely!" 
         : "Opponent's turn - The temple awaits...";
@@ -357,6 +421,9 @@ socket.on('playerAssigned', ({ color, piece }) => {
     gameState.playerPiece = piece;
     
     showNotification(`You are the ${color} Temple Guardian`, 'info');
+    
+    // Setup player display based on perspective
+    setupPlayerDisplay();
     
     // Show game screen immediately but with waiting message
     showScreen('gameScreen');
