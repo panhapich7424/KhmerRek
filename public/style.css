@@ -77,18 +77,10 @@ body {
     font-family: 'Koulen', serif;
     font-size: 4rem;
     color: #d4af37;
-    text-shadow: 
-        0 0 10px #d4af37,
-        0 0 20px #d4af37,
-        0 0 30px #d4af37;
+
     margin-bottom: 0.5rem;
-    animation: glow 2s ease-in-out infinite alternate;
 }
 
-@keyframes glow {
-    from { text-shadow: 0 0 10px #d4af37, 0 0 20px #d4af37, 0 0 30px #d4af37; }
-    to { text-shadow: 0 0 20px #d4af37, 0 0 30px #d4af37, 0 0 40px #d4af37; }
-}
 
 .subtitle {
     font-size: 1.2rem;
