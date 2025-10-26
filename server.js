@@ -16,14 +16,14 @@ const rooms = new Map();
 // Initial board setup for Rek game
 const createInitialBoard = () => {
     return [
-        ['H', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 0: Red pieces at top
-        ['R', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 1: Red King
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'H'],  // Row 0: Red pieces at top
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'R'],  // Row 1: Red King
         ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
         ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
         ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
         ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'P'],  // Row 6: Blue King
-        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'H']   // Row 7: Blue pieces at bottom
+        ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
+        ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
     ];
 };
 
