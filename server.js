@@ -185,7 +185,8 @@ io.on('connection', (socket) => {
                 currentPlayer: 'Blue', // Blue starts first in Rek
                 gameStarted: false,
                 playAgainVotes: new Set(),
-                chatMessages: []
+                chatMessages: [],
+                readyPlayers: new Set()
             });
         }
 
@@ -204,14 +205,9 @@ io.on('connection', (socket) => {
 
             socket.emit('playerAssigned', { color: playerColor, piece: playerPiece });
 
-            // Start game if room is full
+            // Notify when both players joined
             if (room.players.length === 2) {
-                room.gameStarted = true;
-                io.to(roomId).emit('startGame', {
-                    board: room.board,
-                    currentPlayer: room.currentPlayer,
-                    players: room.players
-                });
+                io.to(roomId).emit('bothPlayersJoined');
             }
         } else {
             socket.emit('roomFull');
@@ -263,6 +259,39 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('newMessage', chatMessage);
     });
 
+    // Handle player ready
+    socket.on('playerReady', ({ roomId }) => {
+        const room = rooms.get(roomId);
+        if (!room || room.gameStarted) return;
+
+        room.readyPlayers.add(socket.id);
+
+        // Start countdown when both players are ready
+        if (room.readyPlayers.size === 2) {
+            let countdown = 3;
+            
+            const countdownInterval = setInterval(() => {
+                io.to(roomId).emit('gameStartCountdown', { count: countdown });
+                
+                if (countdown === 0) {
+                    clearInterval(countdownInterval);
+                    
+                    // Start the game
+                    room.gameStarted = true;
+                    room.readyPlayers.clear();
+                    
+                    io.to(roomId).emit('startGame', {
+                        board: room.board,
+                        currentPlayer: room.currentPlayer,
+                        players: room.players
+                    });
+                }
+                
+                countdown--;
+            }, 1000);
+        }
+    });
+
     // Handle player choice (Play Again / Exit)
     socket.on('playerChoice', ({ roomId, choice }) => {
         const room = rooms.get(roomId);
@@ -278,6 +307,7 @@ io.on('connection', (socket) => {
                 room.gameStarted = true;
                 room.playAgainVotes.clear();
                 room.chatMessages = [];
+                room.readyPlayers.clear();
 
                 io.to(roomId).emit('restartGame', {
                     board: room.board,

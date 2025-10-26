@@ -41,7 +41,11 @@ const elements = {
     bgMusic: document.getElementById('bgMusic'),
     chatMessages: document.getElementById('chatMessages'),
     messageInput: document.getElementById('messageInput'),
-    sendMessageBtn: document.getElementById('sendMessageBtn')
+    sendMessageBtn: document.getElementById('sendMessageBtn'),
+    gameStartControls: document.getElementById('gameStartControls'),
+    startGameBtn: document.getElementById('startGameBtn'),
+    gameStartCountdown: document.getElementById('gameStartCountdown'),
+    countdownNumber: document.getElementById('countdownNumber')
 };
 
 // Utility functions
@@ -206,7 +210,15 @@ const handleSquareClick = (displayRow, displayCol) => {
 };
 
 const handlePieceClick = (displayRow, displayCol) => {
-    if (!gameState.gameStarted || gameState.playerColor !== gameState.currentPlayer) {
+    console.log(`Piece clicked: display(${displayRow},${displayCol}), gameStarted: ${gameState.gameStarted}, currentPlayer: ${gameState.currentPlayer}, myColor: ${gameState.playerColor}`);
+    
+    if (!gameState.gameStarted) {
+        showNotification('Game not started yet!', 'error');
+        return;
+    }
+    
+    if (gameState.playerColor !== gameState.currentPlayer) {
+        showNotification('Not your turn!', 'error');
         return;
     }
     
@@ -214,11 +226,18 @@ const handlePieceClick = (displayRow, displayCol) => {
     const [actualRow, actualCol] = getActualCoordinates(displayRow, displayCol);
     const piece = gameState.board[actualRow][actualCol];
     
+    console.log(`Actual coordinates: (${actualRow},${actualCol}), piece: ${piece}`);
+    
     // Check if piece belongs to current player
     const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
+    console.log(`Player pieces: ${playerPieces}, clicked piece: ${piece}`);
+    
     if (playerPieces.includes(piece)) {
         clearSelection();
         selectPiece(displayRow, displayCol);
+        showNotification(`Selected ${piece} piece`, 'info');
+    } else {
+        showNotification('That\'s not your piece!', 'error');
     }
 };
 
@@ -302,8 +321,10 @@ const updateTurnIndicator = (currentPlayer) => {
     elements.topPlayerTurn.classList.toggle('active', !isMyTurn);
     
     elements.statusMessage.textContent = isMyTurn 
-        ? "Your turn - Choose your move wisely!" 
-        : "Opponent's turn - The temple awaits...";
+        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!` 
+        : `Opponent's turn (${currentPlayer}) - The temple awaits...`;
+    
+    console.log(`Turn: ${currentPlayer}, My Color: ${gameState.playerColor}, My Turn: ${isMyTurn}`);
 };
 
 const showGameOverModal = (winner) => {
@@ -395,6 +416,13 @@ elements.messageInput.addEventListener('keypress', (e) => {
     }
 });
 
+elements.startGameBtn.addEventListener('click', () => {
+    socket.emit('playerReady', { roomId: gameState.roomId });
+    elements.startGameBtn.disabled = true;
+    elements.startGameBtn.textContent = '✅ Ready';
+    showNotification('Waiting for opponent to be ready...', 'info');
+});
+
 const sendMessage = () => {
     const message = elements.messageInput.value.trim();
     if (message && gameState.roomId) {
@@ -442,12 +470,29 @@ socket.on('playerAssigned', ({ color, piece }) => {
     ];
     updateBoard(initialBoard);
     
-    if (color === 'Red') {
+    if (color === 'Blue') {
         elements.statusMessage.textContent = `Share room code "${gameState.roomId}" with a friend to start playing!`;
         showNotification(`Room created! Share code: ${gameState.roomId}`, 'info');
         elements.copyRoomBtn.style.display = 'block';
     } else {
         elements.statusMessage.textContent = `Joined room ${gameState.roomId}. Waiting for game to start...`;
+    }
+});
+
+socket.on('bothPlayersJoined', () => {
+    elements.statusMessage.textContent = 'Both players connected! Click "Start Game" when ready.';
+    elements.gameStartControls.style.display = 'block';
+    elements.copyRoomBtn.style.display = 'none';
+    showNotification('Opponent joined! Get ready to play!', 'info');
+});
+
+socket.on('gameStartCountdown', ({ count }) => {
+    elements.gameStartControls.style.display = 'none';
+    elements.gameStartCountdown.style.display = 'block';
+    elements.countdownNumber.textContent = count;
+    
+    if (count === 0) {
+        elements.gameStartCountdown.style.display = 'none';
     }
 });
 
@@ -460,10 +505,12 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     
-    // Hide copy button when game starts
+    // Hide all start game UI elements
     elements.copyRoomBtn.style.display = 'none';
+    elements.gameStartControls.style.display = 'none';
+    elements.gameStartCountdown.style.display = 'none';
     
-    showNotification('The sacred battle begins!', 'info');
+    showNotification(`The sacred battle begins! ${currentPlayer} moves first.`, 'info');
     
     // Optional: Start background music
     // elements.bgMusic.play().catch(() => {}); // Ignore autoplay restrictions

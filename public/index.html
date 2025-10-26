@@ -68,6 +68,13 @@
         <!-- Game Status -->
         <div class="game-status">
             <p id="statusMessage">Waiting for opponent...</p>
+            <div id="gameStartControls" class="game-start-controls" style="display: none;">
+                <button id="startGameBtn" class="btn-primary">🎮 Start Game</button>
+                <p class="start-info">Both players must click "Start Game" to begin</p>
+            </div>
+            <div id="gameStartCountdown" class="game-countdown" style="display: none;">
+                <p>Game starting in <span id="countdownNumber">3</span>...</p>
+            </div>
         </div>
         
         <!-- Chat Box -->
