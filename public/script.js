@@ -264,14 +264,24 @@ const showValidMoves = (displayFromRow, displayFromCol) => {
     ];
     
     directions.forEach(([dRow, dCol]) => {
-        const actualToRow = actualFromRow + dRow;
-        const actualToCol = actualFromCol + dCol;
+        let actualToRow = actualFromRow + dRow;
+        let actualToCol = actualFromCol + dCol;
         
-        if (isValidMove(actualFromRow, actualFromCol, actualToRow, actualToCol)) {
-            // Convert back to display coordinates
+        // Check all squares in this direction until we hit a piece or board edge
+        while (actualToRow >= 0 && actualToRow < 8 && actualToCol >= 0 && actualToCol < 8) {
+            if (gameState.board[actualToRow][actualToCol] !== 'H') {
+                // Hit a piece - stop checking this direction
+                break;
+            }
+            
+            // This is a valid move - highlight it
             const [displayToRow, displayToCol] = getDisplayCoordinates(actualToRow, actualToCol);
             const square = document.querySelector(`[data-row="${displayToRow}"][data-col="${displayToCol}"]`);
             if (square) square.classList.add('valid-move');
+            
+            // Continue to next square in this direction
+            actualToRow += dRow;
+            actualToCol += dCol;
         }
     });
 };
@@ -288,12 +298,29 @@ const isValidMove = (actualFromRow, actualFromCol, actualToRow, actualToCol) => 
     const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     if (!playerPieces.includes(piece)) return false;
     
-    // Check horizontal or vertical movement (one cell only)
-    const rowDiff = Math.abs(actualToRow - actualFromRow);
-    const colDiff = Math.abs(actualToCol - actualFromCol);
+    // Must move horizontally or vertically (like a rook)
+    const rowDiff = actualToRow - actualFromRow;
+    const colDiff = actualToCol - actualFromCol;
     
-    // Must move exactly one cell horizontally or vertically
-    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+    // Must be either horizontal or vertical movement
+    if (rowDiff !== 0 && colDiff !== 0) return false;
+    
+    // Check path is clear (no pieces in between)
+    const stepRow = rowDiff === 0 ? 0 : (rowDiff > 0 ? 1 : -1);
+    const stepCol = colDiff === 0 ? 0 : (colDiff > 0 ? 1 : -1);
+    
+    let currentRow = actualFromRow + stepRow;
+    let currentCol = actualFromCol + stepCol;
+    
+    while (currentRow !== actualToRow || currentCol !== actualToCol) {
+        if (gameState.board[currentRow][currentCol] !== 'H') {
+            return false; // Path blocked
+        }
+        currentRow += stepRow;
+        currentCol += stepCol;
+    }
+    
+    return true;
 };
 
 const clearSelection = () => {

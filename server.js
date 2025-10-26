@@ -27,7 +27,7 @@ const createInitialBoard = () => {
     ];
 };
 
-// Check if a move is valid for Rek game
+// Check if a move is valid for Rek game (rook-like movement)
 const isValidMove = (board, from, to, currentPlayer) => {
     const [fromRow, fromCol] = from;
     const [toRow, toCol] = to;
@@ -43,12 +43,29 @@ const isValidMove = (board, from, to, currentPlayer) => {
     const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     if (!playerPieces.includes(piece)) return false;
 
-    // Check horizontal or vertical movement (one cell only)
-    const rowDiff = Math.abs(toRow - fromRow);
-    const colDiff = Math.abs(toCol - fromCol);
-
-    // Must move exactly one cell horizontally or vertically
-    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+    // Must move horizontally or vertically (like a rook)
+    const rowDiff = toRow - fromRow;
+    const colDiff = toCol - fromCol;
+    
+    // Must be either horizontal or vertical movement
+    if (rowDiff !== 0 && colDiff !== 0) return false;
+    
+    // Check path is clear (no pieces in between)
+    const stepRow = rowDiff === 0 ? 0 : (rowDiff > 0 ? 1 : -1);
+    const stepCol = colDiff === 0 ? 0 : (colDiff > 0 ? 1 : -1);
+    
+    let currentRow = fromRow + stepRow;
+    let currentCol = fromCol + stepCol;
+    
+    while (currentRow !== toRow || currentCol !== toCol) {
+        if (board[currentRow][currentCol] !== 'H') {
+            return false; // Path blocked
+        }
+        currentRow += stepRow;
+        currentCol += stepCol;
+    }
+    
+    return true;
 };
 
 // Make a move on the board for Rek game
@@ -62,8 +79,8 @@ const makeMove = (board, from, to, currentPlayer) => {
     newBoard[toRow][toCol] = piece;
     newBoard[fromRow][fromCol] = 'H';
 
-    // Check for encirclement captures
-    checkEncirclementCaptures(newBoard, currentPlayer);
+    // Check for Rek captures (sandwich capture)
+    checkRekCaptures(newBoard, toRow, toCol, currentPlayer);
 
     // Check for group trapping captures
     checkTrappingCaptures(newBoard, currentPlayer);
@@ -71,36 +88,51 @@ const makeMove = (board, from, to, currentPlayer) => {
     return newBoard;
 };
 
-// Check for encirclement captures (Rek Capture)
-const checkEncirclementCaptures = (board, currentPlayer) => {
+// Check for Rek captures (sandwich capture)
+const checkRekCaptures = (board, toRow, toCol, currentPlayer) => {
     const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     const opponentPieces = currentPlayer === 'Blue' ? ['X', 'R'] : ['O', 'P'];
 
-    // Check horizontal encirclements
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 6; col++) {
-            if (playerPieces.includes(board[row][col]) &&
-                opponentPieces.includes(board[row][col + 1]) &&
-                playerPieces.includes(board[row][col + 2])) {
-                board[row][col + 1] = 'H'; // Capture the middle piece
-            }
-        }
-    }
+    // Check if the moved piece creates a sandwich in any direction
+    const directions = [
+        [0, 1],   // Right
+        [0, -1],  // Left
+        [1, 0],   // Down
+        [-1, 0]   // Up
+    ];
 
-    // Check vertical encirclements
-    for (let row = 0; row < 6; row++) {
-        for (let col = 0; col < 8; col++) {
-            if (playerPieces.includes(board[row][col]) &&
-                opponentPieces.includes(board[row + 1][col]) &&
-                playerPieces.includes(board[row + 2][col])) {
-                board[row + 1][col] = 'H'; // Capture the middle piece
+    directions.forEach(([dRow, dCol]) => {
+        // Look for enemy pieces in this direction
+        let checkRow = toRow + dRow;
+        let checkCol = toCol + dCol;
+        const enemiesToCapture = [];
+
+        // Collect consecutive enemy pieces
+        while (checkRow >= 0 && checkRow < 8 && checkCol >= 0 && checkCol < 8) {
+            const piece = board[checkRow][checkCol];
+
+            if (opponentPieces.includes(piece)) {
+                enemiesToCapture.push([checkRow, checkCol]);
+            } else if (playerPieces.includes(piece)) {
+                // Found our piece - capture all enemies in between
+                enemiesToCapture.forEach(([enemyRow, enemyCol]) => {
+                    board[enemyRow][enemyCol] = 'H';
+                });
+                break;
+            } else {
+                // Empty space - no capture
+                break;
             }
+
+            checkRow += dRow;
+            checkCol += dCol;
         }
-    }
+    });
 };
 
 // Check for group trapping captures
 const checkTrappingCaptures = (board, currentPlayer) => {
+    const opponentPlayer = currentPlayer === 'Blue' ? 'Red' : 'Blue';
     const opponentPieces = currentPlayer === 'Blue' ? ['X', 'R'] : ['O', 'P'];
     const visited = Array(8).fill().map(() => Array(8).fill(false));
 
@@ -108,10 +140,19 @@ const checkTrappingCaptures = (board, currentPlayer) => {
         for (let col = 0; col < 8; col++) {
             if (opponentPieces.includes(board[row][col]) && !visited[row][col]) {
                 const group = [];
-                const hasEscape = findConnectedGroup(board, row, col, opponentPieces, visited, group);
+                findConnectedGroup(board, row, col, opponentPieces, visited, group);
 
-                // If group has no escape route, capture it
-                if (!hasEscape) {
+                // Check if any piece in the group has legal moves
+                let hasLegalMove = false;
+                for (const [pieceRow, pieceCol] of group) {
+                    if (pieceHasLegalMoves(board, pieceRow, pieceCol, opponentPlayer)) {
+                        hasLegalMove = true;
+                        break;
+                    }
+                }
+
+                // If no piece in the group has legal moves, capture the entire group
+                if (!hasLegalMove) {
                     group.forEach(([r, c]) => {
                         board[r][c] = 'H';
                     });
@@ -121,20 +162,14 @@ const checkTrappingCaptures = (board, currentPlayer) => {
     }
 };
 
-// Find connected group and check if it has escape route
+// Find connected group of pieces
 const findConnectedGroup = (board, startRow, startCol, pieceTypes, visited, group) => {
     const stack = [[startRow, startCol]];
-    let hasEscape = false;
 
     while (stack.length > 0) {
         const [row, col] = stack.pop();
 
         if (row < 0 || row >= 8 || col < 0 || col >= 8 || visited[row][col]) {
-            continue;
-        }
-
-        if (board[row][col] === 'H') {
-            hasEscape = true; // Found empty cell - group has escape
             continue;
         }
 
@@ -145,11 +180,40 @@ const findConnectedGroup = (board, startRow, startCol, pieceTypes, visited, grou
         visited[row][col] = true;
         group.push([row, col]);
 
-        // Check all 4 directions
+        // Check all 4 directions for connected pieces
         stack.push([row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]);
     }
+};
 
-    return hasEscape;
+// Check if a piece has any legal moves
+const pieceHasLegalMoves = (board, row, col, player) => {
+    // Check all four directions (orthogonal movement like a rook)
+    const directions = [
+        [0, 1],   // Right
+        [0, -1],  // Left
+        [1, 0],   // Down
+        [-1, 0]   // Up
+    ];
+
+    for (const [dRow, dCol] of directions) {
+        let checkRow = row + dRow;
+        let checkCol = col + dCol;
+
+        // Check each square in this direction
+        while (checkRow >= 0 && checkRow < 8 && checkCol >= 0 && checkCol < 8) {
+            if (board[checkRow][checkCol] === 'H') {
+                // Found an empty square - this is a legal move
+                return true;
+            } else {
+                // Hit a piece - can't move further in this direction
+                break;
+            }
+            checkRow += dRow;
+            checkCol += dCol;
+        }
+    }
+
+    return false; // No legal moves found
 };
 
 // Check for winner in Rek game
@@ -269,24 +333,24 @@ io.on('connection', (socket) => {
         // Start countdown when both players are ready
         if (room.readyPlayers.size === 2) {
             let countdown = 3;
-            
+
             const countdownInterval = setInterval(() => {
                 io.to(roomId).emit('gameStartCountdown', { count: countdown });
-                
+
                 if (countdown === 0) {
                     clearInterval(countdownInterval);
-                    
+
                     // Start the game
                     room.gameStarted = true;
                     room.readyPlayers.clear();
-                    
+
                     io.to(roomId).emit('startGame', {
                         board: room.board,
                         currentPlayer: room.currentPlayer,
                         players: room.players
                     });
                 }
-                
+
                 countdown--;
             }, 1000);
         }
