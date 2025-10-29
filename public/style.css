@@ -1133,6 +1133,7 @@ g Controls */
     transition: all 0.3s ease;
     font-weight: bold;
 }
+
 .bot-play-card {
     display: flex;
     flex-direction: column;
@@ -1177,14 +1178,16 @@ g Controls */
     background: linear-gradient(145deg, #ff8e8e, #ff6b6b);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
-}/* Responsi
+}
+
+/* Responsi
 ve Design for Bot Play */
 @media (max-width: 1024px) {
     .lobby-container {
         grid-template-columns: 1fr 1fr;
         max-width: 800px;
     }
-    
+
     .lobby-section:nth-child(3) {
         grid-column: 1 / -1;
         max-width: 400px;
@@ -1197,7 +1200,7 @@ ve Design for Bot Play */
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .lobby-section:nth-child(3) {
         grid-column: 1;
         max-width: none;

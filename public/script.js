@@ -764,48 +764,140 @@ const botAI = {
     simulateMove: (board, from, to) => {
         const newBoard = board.map(row => [...row]);
         const piece = newBoard[from[0]][from[1]];
+        const currentPlayer = ['X', 'R'].includes(piece) ? 'Red' : 'Blue';
         
+        // Move the piece
         newBoard[from[0]][from[1]] = 'H';
         newBoard[to[0]][to[1]] = piece;
         
-        // Check for captures (sandwich rule)
-        botAI.applyCaptureRules(newBoard, from, to);
+        // Apply capture rules using the same logic as server
+        botAI.checkRekCaptures(newBoard, to[0], to[1], currentPlayer);
+        botAI.checkTrappingCaptures(newBoard, currentPlayer);
         
         return newBoard;
     },
     
-    // Apply capture rules after a move
-    applyCaptureRules: (board, from, to) => {
-        const piece = board[to[0]][to[1]];
-        const isRedPiece = ['X', 'R'].includes(piece);
-        const enemyPieces = isRedPiece ? ['O', 'P'] : ['X', 'R'];
-        
+
+    
+    // Check for Rek captures (sandwich capture) - same as server
+    checkRekCaptures: (board, toRow, toCol, currentPlayer) => {
+        const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
+        const opponentPieces = currentPlayer === 'Blue' ? ['X', 'R'] : ['O', 'P'];
+
+        // Check horizontal and vertical directions for Rek captures
         const directions = [
-            [-1, 0], [1, 0], [0, -1], [0, 1]
+            [[0, -1], [0, 1]],   // Left and Right
+            [[-1, 0], [1, 0]]    // Up and Down
         ];
-        
-        directions.forEach(([dRow, dCol]) => {
-            const captured = [];
-            let row = to[0] + dRow;
-            let col = to[1] + dCol;
-            
-            // Collect enemy pieces in this direction
-            while (row >= 0 && row < 8 && col >= 0 && col < 8) {
-                if (board[row][col] === 'H') {
-                    break; // Empty space, no capture
-                } else if (enemyPieces.includes(board[row][col])) {
-                    captured.push([row, col]);
-                } else {
-                    // Found friendly piece, capture all enemies in between
-                    captured.forEach(([capturedRow, capturedCol]) => {
-                        board[capturedRow][capturedCol] = 'H';
-                    });
-                    break;
+
+        directions.forEach(([dir1, dir2]) => {
+            const [dRow1, dCol1] = dir1;
+            const [dRow2, dCol2] = dir2;
+
+            // Check positions on both sides of the moved piece
+            const pos1Row = toRow + dRow1;
+            const pos1Col = toCol + dCol1;
+            const pos2Row = toRow + dRow2;
+            const pos2Col = toCol + dCol2;
+
+            // Check if both positions are within bounds
+            if (pos1Row >= 0 && pos1Row < 8 && pos1Col >= 0 && pos1Col < 8 &&
+                pos2Row >= 0 && pos2Row < 8 && pos2Col >= 0 && pos2Col < 8) {
+
+                const piece1 = board[pos1Row][pos1Col];
+                const piece2 = board[pos2Row][pos2Col];
+
+                // If both adjacent pieces are enemies, capture them
+                if (opponentPieces.includes(piece1) && opponentPieces.includes(piece2)) {
+                    board[pos1Row][pos1Col] = 'H';
+                    board[pos2Row][pos2Col] = 'H';
                 }
-                row += dRow;
-                col += dCol;
             }
         });
+    },
+    
+    // Check for group trapping captures - same as server
+    checkTrappingCaptures: (board, currentPlayer) => {
+        const opponentPlayer = currentPlayer === 'Blue' ? 'Red' : 'Blue';
+        const opponentPieces = currentPlayer === 'Blue' ? ['X', 'R'] : ['O', 'P'];
+        const visited = Array(8).fill().map(() => Array(8).fill(false));
+
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (opponentPieces.includes(board[row][col]) && !visited[row][col]) {
+                    const group = [];
+                    botAI.findConnectedGroup(board, row, col, opponentPieces, visited, group);
+
+                    // Check if any piece in the group has legal moves
+                    let hasLegalMove = false;
+                    for (const [pieceRow, pieceCol] of group) {
+                        if (botAI.pieceHasLegalMoves(board, pieceRow, pieceCol, opponentPlayer)) {
+                            hasLegalMove = true;
+                            break;
+                        }
+                    }
+
+                    // If no piece in the group has legal moves, capture the entire group
+                    if (!hasLegalMove) {
+                        group.forEach(([r, c]) => {
+                            board[r][c] = 'H';
+                        });
+                    }
+                }
+            }
+        }
+    },
+    
+    // Find connected group of pieces - same as server
+    findConnectedGroup: (board, startRow, startCol, pieceTypes, visited, group) => {
+        const stack = [[startRow, startCol]];
+
+        while (stack.length > 0) {
+            const [row, col] = stack.pop();
+
+            if (row < 0 || row >= 8 || col < 0 || col >= 8 || visited[row][col]) {
+                continue;
+            }
+
+            if (!pieceTypes.includes(board[row][col])) {
+                continue;
+            }
+
+            visited[row][col] = true;
+            group.push([row, col]);
+
+            // Check all 4 directions for connected pieces
+            stack.push([row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]);
+        }
+    },
+    
+    // Check if a piece has any legal moves - same as server
+    pieceHasLegalMoves: (board, row, col, player) => {
+        // Check all four directions (orthogonal movement like a rook)
+        const directions = [
+            [0, 1],   // Right
+            [0, -1],  // Left
+            [1, 0],   // Down
+            [-1, 0]   // Up
+        ];
+
+        for (const [dRow, dCol] of directions) {
+            let checkRow = row + dRow;
+            let checkCol = col + dCol;
+
+            // Check each square in this direction
+            while (checkRow >= 0 && checkRow < 8 && checkCol >= 0 && checkCol < 8) {
+                if (board[checkRow][checkCol] === 'H') {
+                    return true; // Found a legal move
+                } else {
+                    break; // Hit a piece, can't move further in this direction
+                }
+                checkRow += dRow;
+                checkCol += dCol;
+            }
+        }
+
+        return false; // No legal moves found
     },
     
     // Minimax algorithm with alpha-beta pruning
@@ -868,8 +960,17 @@ const botAI = {
 
 // Execute player move in bot game
 const executeBotGameMove = (from, to) => {
-    // Apply the player's move
-    const newBoard = botAI.simulateMove(gameState.board, from, to);
+    // Create new board and apply the player's move
+    const newBoard = gameState.board.map(row => [...row]);
+    const piece = newBoard[from[0]][from[1]];
+    
+    // Move the piece
+    newBoard[from[0]][from[1]] = 'H';
+    newBoard[to[0]][to[1]] = piece;
+    
+    // Apply capture rules using the same logic as server
+    botAI.checkRekCaptures(newBoard, to[0], to[1], 'Blue');
+    botAI.checkTrappingCaptures(newBoard, 'Blue');
     
     // Check for win condition
     const bluePieces = newBoard.flat().filter(piece => ['O', 'P'].includes(piece));
@@ -917,8 +1018,17 @@ const executeBotMove = () => {
             // Highlight the bot's move
             gameState.lastMove = { from: bestMove.from, to: bestMove.to };
             
-            // Apply the move to the board
-            const newBoard = botAI.simulateMove(gameState.board, bestMove.from, bestMove.to);
+            // Create new board and apply the bot's move
+            const newBoard = gameState.board.map(row => [...row]);
+            const piece = newBoard[bestMove.from[0]][bestMove.from[1]];
+            
+            // Move the piece
+            newBoard[bestMove.from[0]][bestMove.from[1]] = 'H';
+            newBoard[bestMove.to[0]][bestMove.to[1]] = piece;
+            
+            // Apply capture rules using the same logic as server
+            botAI.checkRekCaptures(newBoard, bestMove.to[0], bestMove.to[1], 'Red');
+            botAI.checkTrappingCaptures(newBoard, 'Red');
             
             // Check for win condition
             const bluePieces = newBoard.flat().filter(piece => ['O', 'P'].includes(piece));
