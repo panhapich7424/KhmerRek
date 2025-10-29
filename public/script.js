@@ -11,7 +11,9 @@ let gameState = {
     selectedSquare: null,
     gameStarted: false,
     lastMove: null, // Track last move for highlighting
-    isBot: false // Track if playing against bot
+    isBot: false, // Track if playing against bot
+    turnTimeLeft: 60, // Time left in seconds
+    timerInterval: null // Timer interval reference
 };
 
 // DOM elements
@@ -67,6 +69,9 @@ const elements = {
     gameplayControls: document.getElementById('gameplayControls'),
     requestRestartBtn: document.getElementById('requestRestartBtn'),
     exitBotGameBtn: document.getElementById('exitBotGameBtn'),
+    turnTimer: document.getElementById('turnTimer'),
+    timerMinutes: document.getElementById('timerMinutes'),
+    timerSeconds: document.getElementById('timerSeconds'),
     restartRequestModal: document.getElementById('restartRequestModal'),
     restartRequestText: document.getElementById('restartRequestText'),
     restartRequestMessage: document.getElementById('restartRequestMessage'),
@@ -413,19 +418,7 @@ const highlightLastMove = (from, to) => {
     }
 };
 
-const updateTurnIndicator = (currentPlayer) => {
-    const isMyTurn = gameState.playerColor === currentPlayer;
 
-    // Update turn indicators based on perspective
-    elements.bottomPlayerTurn.classList.toggle('active', isMyTurn);
-    elements.topPlayerTurn.classList.toggle('active', !isMyTurn);
-
-    elements.statusMessage.textContent = isMyTurn
-        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!`
-        : `Opponent's turn (${currentPlayer}) - Waiting for opponent...`;
-
-    console.log(`Turn: ${currentPlayer}, My Color: ${gameState.playerColor}, My Turn: ${isMyTurn}`);
-};
 
 const showGameOverModal = (winner) => {
     elements.winnerText.textContent = `${winner} Wins!`;
@@ -447,6 +440,99 @@ const showRestartRequestModal = (requesterName) => {
 
 const hideRestartRequestModal = () => {
     elements.restartRequestModal.classList.remove('active');
+};
+
+// Timer Functions
+const startTurnTimer = () => {
+    // Only show timer for multiplayer games
+    if (gameState.isBot) {
+        elements.turnTimer.style.display = 'none';
+        return;
+    }
+
+    elements.turnTimer.style.display = 'block';
+    gameState.turnTimeLeft = 60; // Reset to 60 seconds
+    
+    // Update timer display class based on whose turn it is
+    const isMyTurn = gameState.playerColor === gameState.currentPlayer;
+    elements.turnTimer.className = `turn-timer ${isMyTurn ? 'my-turn' : 'opponent-turn'}`;
+    
+    updateTimerDisplay();
+    
+    // Clear any existing timer
+    if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+    }
+    
+    // Start new timer
+    gameState.timerInterval = setInterval(() => {
+        gameState.turnTimeLeft--;
+        updateTimerDisplay();
+        
+        // Check if time is up
+        if (gameState.turnTimeLeft <= 0) {
+            clearInterval(gameState.timerInterval);
+            handleTimeUp();
+        }
+    }, 1000);
+};
+
+const updateTimerDisplay = () => {
+    const minutes = Math.floor(gameState.turnTimeLeft / 60);
+    const seconds = gameState.turnTimeLeft % 60;
+    
+    elements.timerMinutes.textContent = minutes;
+    elements.timerSeconds.textContent = seconds.toString().padStart(2, '0');
+    
+    // Update timer styling based on time left
+    elements.timerDisplay = document.querySelector('.timer-display');
+    if (elements.timerDisplay) {
+        elements.timerDisplay.classList.remove('timer-warning', 'timer-critical');
+        
+        if (gameState.turnTimeLeft <= 10) {
+            elements.timerDisplay.classList.add('timer-critical');
+        } else if (gameState.turnTimeLeft <= 30) {
+            elements.timerDisplay.classList.add('timer-warning');
+        }
+    }
+};
+
+const stopTurnTimer = () => {
+    if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+        gameState.timerInterval = null;
+    }
+    elements.turnTimer.style.display = 'none';
+};
+
+const handleTimeUp = () => {
+    // Only handle time up for the current player's turn
+    const isMyTurn = gameState.playerColor === gameState.currentPlayer;
+    
+    if (isMyTurn && gameState.gameStarted) {
+        // Player's time is up - forfeit turn
+        showNotification('Time\'s up! Turn forfeited.', 'error');
+        socket.emit('timeUp', { roomId: gameState.roomId });
+    }
+};
+
+const updateTurnIndicator = (currentPlayer) => {
+    const isMyTurn = gameState.playerColor === currentPlayer;
+    
+    // Update turn indicators based on perspective
+    elements.bottomPlayerTurn.classList.toggle('active', isMyTurn);
+    elements.topPlayerTurn.classList.toggle('active', !isMyTurn);
+    
+    elements.statusMessage.textContent = isMyTurn 
+        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!` 
+        : `Opponent's turn (${currentPlayer}) - Waiting for opponent...`;
+    
+    // Start timer for multiplayer games
+    if (gameState.gameStarted && !gameState.isBot) {
+        startTurnTimer();
+    }
+    
+    console.log(`Turn: ${currentPlayer}, My Color: ${gameState.playerColor}, My Turn: ${isMyTurn}`);
 };
 
 // Room management functions
@@ -1271,6 +1357,9 @@ socket.on('gameOver', ({ winner, board, lastMove }) => {
 
     // Hide gameplay controls when game is over
     elements.gameplayControls.style.display = 'none';
+    
+    // Stop the timer
+    stopTurnTimer();
 
     // Highlight the winning move
     if (lastMove) {
@@ -1308,11 +1397,17 @@ socket.on('restartGame', ({ board, currentPlayer }) => {
         elements.exitBotGameBtn.style.display = 'none';
     }
 
+    // Start timer for multiplayer games
+    if (!gameState.isBot) {
+        startTurnTimer();
+    }
+
     showNotification('A new battle begins!', 'info');
 });
 
 socket.on('endSession', () => {
     hideGameOverModal();
+    stopTurnTimer();
     showScreen('mainMenu');
     gameState = {
         roomId: null,
@@ -1323,7 +1418,9 @@ socket.on('endSession', () => {
         selectedSquare: null,
         gameStarted: false,
         lastMove: null,
-        isBot: false
+        isBot: false,
+        turnTimeLeft: 60,
+        timerInterval: null
     };
 
     elements.roomInput.value = '';
@@ -1342,6 +1439,7 @@ socket.on('roomNotFound', () => {
 
 socket.on('playerDisconnected', () => {
     gameState.gameStarted = false;
+    stopTurnTimer();
     elements.statusMessage.textContent = 'Your opponent has left the room. Waiting for reconnection...';
     showNotification('Opponent disconnected', 'error');
 });
@@ -1384,6 +1482,7 @@ socket.on('restartRequestAccepted', () => {
 });
 
 socket.on('exitedLobby', () => {
+    stopTurnTimer();
     showScreen('mainMenu');
     gameState = {
         roomId: null,
@@ -1394,7 +1493,9 @@ socket.on('exitedLobby', () => {
         selectedSquare: null,
         gameStarted: false,
         lastMove: null,
-        isBot: false
+        isBot: false,
+        turnTimeLeft: 60,
+        timerInterval: null
     };
 
     elements.roomInput.value = '';

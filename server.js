@@ -518,6 +518,39 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Handle time up
+    socket.on('timeUp', ({ roomId }) => {
+        const room = rooms.get(roomId);
+        if (!room || !room.gameStarted) return;
+
+        const currentPlayerSocket = room.players.find(p => p.color === room.currentPlayer);
+        if (!currentPlayerSocket || currentPlayerSocket.id !== socket.id) return;
+
+        // Switch to the other player's turn
+        room.currentPlayer = room.currentPlayer === 'Blue' ? 'Red' : 'Blue';
+
+        // Store last move for highlighting (time up doesn't have a move)
+        room.lastMove = null;
+
+        // Check for winner (in case time up results in a win condition)
+        const winner = checkWinner(room.board);
+        if (winner) {
+            room.gameStarted = false;
+            io.to(roomId).emit('gameOver', { 
+                winner, 
+                board: room.board,
+                lastMove: room.lastMove 
+            });
+        } else {
+            // Continue game with next player
+            io.to(roomId).emit('updateBoard', {
+                board: room.board,
+                currentPlayer: room.currentPlayer,
+                lastMove: room.lastMove
+            });
+        }
+    });
+
     // Handle exit lobby (before game starts)
     socket.on('exitLobby', ({ roomId }) => {
         const room = rooms.get(roomId);
