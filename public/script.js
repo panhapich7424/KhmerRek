@@ -25,6 +25,9 @@ const elements = {
     roomInput: document.getElementById('roomInput'),
     joinRoomBtn: document.getElementById('joinRoomBtn'),
     createRoomBtn: document.getElementById('createRoomBtn'),
+    confirmCreateBtn: document.getElementById('confirmCreateBtn'),
+    cancelCreateBtn: document.getElementById('cancelCreateBtn'),
+    roomSettingsModal: document.getElementById('roomSettingsModal'),
     playWithBotBtn: document.getElementById('playWithBotBtn'),
     refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
     roomList: document.getElementById('roomList'),
@@ -490,13 +493,29 @@ window.joinRoomFromList = (roomId) => {
 
 // Event listeners
 elements.createRoomBtn.addEventListener('click', () => {
+    elements.roomSettingsModal.style.display = 'flex';
+});
+
+elements.confirmCreateBtn.addEventListener('click', () => {
     const roomType = document.querySelector('input[name="roomType"]:checked').value;
     const roomId = generateRoomCode();
     gameState.roomId = roomId;
     elements.roomCode.textContent = `Room: ${roomId}`;
     
+    elements.roomSettingsModal.style.display = 'none';
     showScreen('loadingScreen');
     socket.emit('createRoom', { roomId, isPublic: roomType === 'public' });
+});
+
+elements.cancelCreateBtn.addEventListener('click', () => {
+    elements.roomSettingsModal.style.display = 'none';
+});
+
+// Close modal when clicking backdrop
+elements.roomSettingsModal.addEventListener('click', (e) => {
+    if (e.target === elements.roomSettingsModal || e.target.classList.contains('modal-backdrop')) {
+        elements.roomSettingsModal.style.display = 'none';
+    }
 });
 
 elements.playWithBotBtn.addEventListener('click', () => {
@@ -512,12 +531,12 @@ elements.playWithBotBtn.addEventListener('click', () => {
     // Initialize bot game
     const initialBoard = [
         ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
-        ['R','H','H','H','H','H','H','H'],  // Row 1: Red King
+        ['H','H','H','H','H','H','H','R'],  // Row 1: Red King
         ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
         ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
         ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
         ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
-        ['H','H','H','H','H','H','H','P'],  // Row 6: Blue King
+        ['P','H','H','H','H','H','H','H'],  // Row 6: Blue King
         ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
     ];
     
@@ -560,13 +579,20 @@ elements.roomInput.addEventListener('keypress', (e) => {
 });
 
 elements.playAgainBtn.addEventListener('click', () => {
-    socket.emit('playerChoice', {
-        roomId: gameState.roomId,
-        choice: 'playAgain'
-    });
-    
-    elements.playAgainBtn.disabled = true;
-    elements.playAgainBtn.textContent = 'Waiting...';
+    if (gameState.isBot) {
+        // Restart bot game immediately
+        restartBotGame();
+        hideGameOverModal();
+    } else {
+        // Request play again from opponent
+        socket.emit('playerChoice', {
+            roomId: gameState.roomId,
+            choice: 'playAgain'
+        });
+        
+        elements.playAgainBtn.disabled = true;
+        elements.playAgainBtn.textContent = 'Waiting...';
+    }
 });
 
 elements.exitGameBtn.addEventListener('click', () => {
@@ -936,6 +962,24 @@ const botAI = {
         }
     },
     
+    // Check for winner in Rek game (same as server)
+    checkWinner: (board) => {
+        let redKing = false;
+        let blueKing = false;
+
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (board[row][col] === 'R') redKing = true;
+                if (board[row][col] === 'P') blueKing = true;
+            }
+        }
+
+        // Game ends when one King is captured
+        if (!redKing) return 'Blue';
+        if (!blueKing) return 'Red';
+        return null;
+    },
+    
     // Get the best move for the bot
     getBestMove: (board) => {
         const moves = botAI.getPossibleMoves(board, 'Red');
@@ -972,25 +1016,14 @@ const executeBotGameMove = (from, to) => {
     botAI.checkRekCaptures(newBoard, to[0], to[1], 'Blue');
     botAI.checkTrappingCaptures(newBoard, 'Blue');
     
-    // Check for win condition
-    const bluePieces = newBoard.flat().filter(piece => ['O', 'P'].includes(piece));
-    const redPieces = newBoard.flat().filter(piece => ['X', 'R'].includes(piece));
-    
-    if (bluePieces.length === 0) {
+    // Check for win condition (king capture)
+    const winner = botAI.checkWinner(newBoard);
+    if (winner) {
         gameState.gameStarted = false;
         updateBoard(newBoard);
         highlightLastMove(from, to);
         elements.gameplayControls.style.display = 'none';
-        showGameOverModal('Red');
-        return;
-    }
-    
-    if (redPieces.length === 0) {
-        gameState.gameStarted = false;
-        updateBoard(newBoard);
-        highlightLastMove(from, to);
-        elements.gameplayControls.style.display = 'none';
-        showGameOverModal('Blue');
+        showGameOverModal(winner);
         return;
     }
     
@@ -1030,25 +1063,14 @@ const executeBotMove = () => {
             botAI.checkRekCaptures(newBoard, bestMove.to[0], bestMove.to[1], 'Red');
             botAI.checkTrappingCaptures(newBoard, 'Red');
             
-            // Check for win condition
-            const bluePieces = newBoard.flat().filter(piece => ['O', 'P'].includes(piece));
-            const redPieces = newBoard.flat().filter(piece => ['X', 'R'].includes(piece));
-            
-            if (bluePieces.length === 0) {
+            // Check for win condition (king capture)
+            const winner = botAI.checkWinner(newBoard);
+            if (winner) {
                 gameState.gameStarted = false;
                 updateBoard(newBoard);
                 highlightLastMove(bestMove.from, bestMove.to);
                 elements.gameplayControls.style.display = 'none';
-                showGameOverModal('Red');
-                return;
-            }
-            
-            if (redPieces.length === 0) {
-                gameState.gameStarted = false;
-                updateBoard(newBoard);
-                highlightLastMove(bestMove.from, bestMove.to);
-                elements.gameplayControls.style.display = 'none';
-                showGameOverModal('Blue');
+                showGameOverModal(winner);
                 return;
             }
             
@@ -1067,12 +1089,12 @@ const executeBotMove = () => {
 const restartBotGame = () => {
     const initialBoard = [
         ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
-        ['R','H','H','H','H','H','H','H'],  // Row 1: Red King
+        ['H','H','H','H','H','H','H','R'],  // Row 1: Red King
         ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
         ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
         ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
         ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
-        ['H','H','H','H','H','H','H','P'],  // Row 6: Blue King
+        ['P','H','H','H','H','H','H','H'],  // Row 6: Blue King
         ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
     ];
     
@@ -1108,12 +1130,12 @@ socket.on('playerAssigned', ({ color, piece }) => {
     // Show initial board setup for Rek game
     const initialBoard = [
         ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
-        ['R','H','H','H','H','H','H','H'],  // Row 1: Red King
+        ['H','H','H','H','H','H','H','R'],  // Row 1: Red King
         ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
         ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
         ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
         ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
-        ['H','H','H','H','H','H','H','P'],  // Row 6: Blue King
+        ['P','H','H','H','H','H','H','H'],  // Row 6: Blue King
         ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
     ];
     updateBoard(initialBoard);

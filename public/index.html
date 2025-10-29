@@ -17,16 +17,65 @@
 
     <!-- Main Menu Screen -->
     <div id="mainMenu" class="screen active">
-        <div class="temple-header">
-            <h1 class="game-title">រែកខ្មែរ </h1>
-            <p class="subtitle">FOR ONLY NIT AND PICH</p>
+        <div class="main-header">
+            <h1 class="game-title">រែកខ្មែរ</h1>
+            <p class="game-subtitle">Strategic Board Game</p>
         </div>
 
-        <div class="lobby-container">
-            <!-- Create Room Section -->
-            <div class="lobby-section">
-                <h2>🏛️ Create Room</h2>
-                <div class="create-room-card">
+        <div class="menu-container">
+            <!-- Quick Play Section -->
+            <div class="menu-section primary-section">
+                <div class="section-icon">🎮</div>
+                <h2>Quick Play</h2>
+                <p class="section-description">Jump into a game instantly</p>
+                <div class="quick-actions">
+                    <button id="playWithBotBtn" class="btn-large btn-bot">
+                        <span class="btn-icon">🤖</span>
+                        <span class="btn-text">
+                            <strong>Play vs AI</strong>
+                            <small>Smart opponent • Hard difficulty</small>
+                        </span>
+                    </button>
+                    <button id="createRoomBtn" class="btn-large btn-create">
+                        <span class="btn-icon">➕</span>
+                        <span class="btn-text">
+                            <strong>Create Room</strong>
+                            <small>Play with friends online</small>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Join Game Section -->
+            <div class="menu-section">
+                <div class="section-icon">🚪</div>
+                <h2>Join Game</h2>
+                <div class="join-options">
+                    <div class="join-by-code">
+                        <label>Room Code</label>
+                        <div class="input-group">
+                            <input type="text" id="roomInput" placeholder="Enter 6-digit code" maxlength="10">
+                            <button id="joinRoomBtn" class="btn-primary">Join</button>
+                        </div>
+                    </div>
+                    
+                    <div class="room-list-section">
+                        <div class="room-list-header">
+                            <label>Public Rooms</label>
+                            <button id="refreshRoomsBtn" class="btn-icon-small">🔄</button>
+                        </div>
+                        <div id="roomList" class="room-list">
+                            <div class="loading-rooms">Loading rooms...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Settings Modal (Hidden by default) -->
+            <div id="roomSettingsModal" class="settings-modal" style="display: none;">
+                <div class="modal-backdrop"></div>
+                <div class="settings-content">
+                    <h3>Room Settings</h3>
                     <div class="room-settings">
                         <label class="room-setting">
                             <input type="radio" name="roomType" value="public" checked>
@@ -39,42 +88,9 @@
                             <small>Hidden, only accessible with room code</small>
                         </label>
                     </div>
-                    <button id="createRoomBtn" class="btn-primary">Create Room</button>
-                </div>
-            </div>
-
-            <!-- Join Room Section -->
-            <div class="lobby-section">
-                <h2>🚪 Join Room</h2>
-                <div class="join-room-card">
-                    <div class="input-group">
-                        <input type="text" id="roomInput" placeholder="Enter Room Code" maxlength="10">
-                        <button id="joinRoomBtn" class="btn-primary">Join Room</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Single Player Section -->
-            <div class="lobby-section">
-                <h2>🤖 Single Player</h2>
-                <div class="bot-play-card">
-                    <div class="bot-info">
-                        <p>Challenge our smart AI opponent!</p>
-                        <small>Hard difficulty - Perfect for practice</small>
-                    </div>
-                    <button id="playWithBotBtn" class="btn-primary">🎯 Play with Bot</button>
-                </div>
-            </div>
-
-            <!-- Room List Section -->
-            <div class="lobby-section">
-                <h2>🏯 Public Rooms</h2>
-                <div class="room-list-card">
-                    <div class="room-list-header">
-                        <button id="refreshRoomsBtn" class="btn-secondary small">🔄 Refresh</button>
-                    </div>
-                    <div id="roomList" class="room-list">
-                        <div class="loading-rooms">Loading rooms...</div>
+                    <div class="modal-actions">
+                        <button id="confirmCreateBtn" class="btn-primary">Create Room</button>
+                        <button id="cancelCreateBtn" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
             </div>
