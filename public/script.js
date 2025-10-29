@@ -45,6 +45,8 @@ const elements = {
     chatMessages: document.getElementById('chatMessages'),
     messageInput: document.getElementById('messageInput'),
     sendMessageBtn: document.getElementById('sendMessageBtn'),
+    waitingControls: document.getElementById('waitingControls'),
+    exitRoomBtn: document.getElementById('exitRoomBtn'),
     gameStartControls: document.getElementById('gameStartControls'),
     startGameBtn: document.getElementById('startGameBtn'),
     exitLobbyBtn: document.getElementById('exitLobbyBtn'),
@@ -402,7 +404,7 @@ const updateTurnIndicator = (currentPlayer) => {
     
     elements.statusMessage.textContent = isMyTurn 
         ? `Your turn (${gameState.playerColor}) - Choose your move wisely!` 
-        : `Opponent's turn (${currentPlayer}) - The temple awaits...`;
+        : `Opponent's turn (${currentPlayer}) - Waiting for opponent...`;
     
     console.log(`Turn: ${currentPlayer}, My Color: ${gameState.playerColor}, My Turn: ${isMyTurn}`);
 };
@@ -410,8 +412,8 @@ const updateTurnIndicator = (currentPlayer) => {
 const showGameOverModal = (winner) => {
     elements.winnerText.textContent = `${winner} Wins!`;
     elements.winnerMessage.textContent = winner === gameState.playerColor 
-        ? "Victory is yours! The temple acknowledges your wisdom!" 
-        : "Defeat teaches wisdom. The temple respects your effort.";
+        ? "Victory is yours! Well played!" 
+        : "Good game! Better luck next time.";
     
     elements.gameOverModal.classList.add('active');
 };
@@ -432,12 +434,12 @@ const hideRestartRequestModal = () => {
 // Room management functions
 const refreshRoomList = () => {
     socket.emit('getRoomList');
-    elements.roomList.innerHTML = '<div class="loading-rooms">Loading temples...</div>';
+    elements.roomList.innerHTML = '<div class="loading-rooms">Loading rooms...</div>';
 };
 
 const displayRoomList = (rooms) => {
     if (rooms.length === 0) {
-        elements.roomList.innerHTML = '<div class="no-rooms">No public temples available</div>';
+        elements.roomList.innerHTML = '<div class="no-rooms">No public rooms available</div>';
         return;
     }
     
@@ -566,6 +568,10 @@ elements.startGameBtn.addEventListener('click', () => {
     showNotification('Waiting for opponent to be ready...', 'info');
 });
 
+elements.exitRoomBtn.addEventListener('click', () => {
+    socket.emit('exitLobby', { roomId: gameState.roomId });
+});
+
 elements.exitLobbyBtn.addEventListener('click', () => {
     socket.emit('exitLobby', { roomId: gameState.roomId });
 });
@@ -612,7 +618,7 @@ socket.on('playerAssigned', ({ color, piece }) => {
     gameState.playerColor = color;
     gameState.playerPiece = piece;
     
-    showNotification(`You are the ${color} Temple Guardian`, 'info');
+    showNotification(`You are the ${color} Player`, 'info');
     
     // Setup player display based on perspective
     setupPlayerDisplay();
@@ -638,13 +644,16 @@ socket.on('playerAssigned', ({ color, piece }) => {
         elements.statusMessage.textContent = `Share room code "${gameState.roomId}" with a friend to start playing!`;
         showNotification(`Room created! Share code: ${gameState.roomId}`, 'info');
         elements.copyRoomBtn.style.display = 'block';
+        elements.waitingControls.style.display = 'block';
     } else {
         elements.statusMessage.textContent = `Joined room ${gameState.roomId}. Waiting for game to start...`;
+        elements.waitingControls.style.display = 'block';
     }
 });
 
 socket.on('bothPlayersJoined', () => {
     elements.statusMessage.textContent = 'Both players connected! Click "Start Game" when ready.';
+    elements.waitingControls.style.display = 'none';
     elements.gameStartControls.style.display = 'block';
     elements.copyRoomBtn.style.display = 'none';
     showNotification('Opponent joined! Get ready to play!', 'info');
@@ -677,7 +686,7 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
     elements.gameStartCountdown.style.display = 'none';
     elements.gameplayControls.style.display = 'block';
     
-    showNotification(`The sacred battle begins! ${currentPlayer} moves first.`, 'info');
+    showNotification(`The game begins! ${currentPlayer} moves first.`, 'info');
     
     // Optional: Start background music
     // elements.bgMusic.play().catch(() => {}); // Ignore autoplay restrictions
@@ -750,27 +759,27 @@ socket.on('endSession', () => {
     };
     
     elements.roomInput.value = '';
-    showNotification('Returning to the temple entrance...', 'info');
+    showNotification('Returning to main menu...', 'info');
 });
 
 socket.on('roomFull', () => {
     showScreen('mainMenu');
-    showNotification('This temple chamber is full. Try another room.', 'error');
+    showNotification('This room is full. Try another room.', 'error');
 });
 
 socket.on('roomNotFound', () => {
     showScreen('mainMenu');
-    showNotification('This temple chamber does not exist.', 'error');
+    showNotification('This room does not exist.', 'error');
 });
 
 socket.on('playerDisconnected', () => {
     gameState.gameStarted = false;
-    elements.statusMessage.textContent = 'Your opponent has left the temple. Waiting for reconnection...';
+    elements.statusMessage.textContent = 'Your opponent has left the room. Waiting for reconnection...';
     showNotification('Opponent disconnected', 'error');
 });
 
 socket.on('connect', () => {
-    console.log('Connected to temple server');
+    console.log('Connected to game server');
 });
 
 socket.on('newMessage', ({ player, message }) => {
@@ -786,8 +795,8 @@ socket.on('roomListUpdated', (rooms) => {
 });
 
 socket.on('disconnect', () => {
-    console.log('Disconnected from temple server');
-    showNotification('Connection to temple lost. Attempting to reconnect...', 'error');
+    console.log('Disconnected from game server');
+    showNotification('Connection lost. Attempting to reconnect...', 'error');
 });
 
 socket.on('restartRequested', ({ requesterName }) => {

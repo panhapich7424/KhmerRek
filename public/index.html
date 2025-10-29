@@ -25,44 +25,44 @@
         <div class="lobby-container">
             <!-- Create Room Section -->
             <div class="lobby-section">
-                <h2>🏛️ Create Temple</h2>
+                <h2>🏛️ Create Room</h2>
                 <div class="create-room-card">
                     <div class="room-settings">
                         <label class="room-setting">
                             <input type="radio" name="roomType" value="public" checked>
-                            <span class="radio-label">🌍 Public Temple</span>
-                            <small>Visible in temple list for everyone</small>
+                            <span class="radio-label">🌍 Public Room</span>
+                            <small>Visible in room list for everyone</small>
                         </label>
                         <label class="room-setting">
                             <input type="radio" name="roomType" value="private">
-                            <span class="radio-label">🔒 Private Temple</span>
+                            <span class="radio-label">🔒 Private Room</span>
                             <small>Hidden, only accessible with room code</small>
                         </label>
                     </div>
-                    <button id="createRoomBtn" class="btn-primary">Create Temple</button>
+                    <button id="createRoomBtn" class="btn-primary">Create Room</button>
                 </div>
             </div>
 
             <!-- Join Room Section -->
             <div class="lobby-section">
-                <h2>🚪 Join Temple</h2>
+                <h2>🚪 Join Room</h2>
                 <div class="join-room-card">
                     <div class="input-group">
                         <input type="text" id="roomInput" placeholder="Enter Room Code" maxlength="10">
-                        <button id="joinRoomBtn" class="btn-primary">Join Temple</button>
+                        <button id="joinRoomBtn" class="btn-primary">Join Room</button>
                     </div>
                 </div>
             </div>
 
             <!-- Room List Section -->
             <div class="lobby-section">
-                <h2>🏯 Public Temples</h2>
+                <h2>🏯 Public Rooms</h2>
                 <div class="room-list-card">
                     <div class="room-list-header">
                         <button id="refreshRoomsBtn" class="btn-secondary small">🔄 Refresh</button>
                     </div>
                     <div id="roomList" class="room-list">
-                        <div class="loading-rooms">Loading temples...</div>
+                        <div class="loading-rooms">Loading rooms...</div>
                     </div>
                 </div>
             </div>
@@ -104,9 +104,12 @@
         <!-- Game Status -->
         <div class="game-status">
             <p id="statusMessage">Waiting for opponent...</p>
+            <div id="waitingControls" class="waiting-controls" style="display: none;">
+                <button id="exitRoomBtn" class="btn-secondary">🚪 Exit Room</button>
+            </div>
             <div id="gameStartControls" class="game-start-controls" style="display: none;">
                 <button id="startGameBtn" class="btn-primary">🎮 Start Game</button>
-                <button id="exitLobbyBtn" class="btn-secondary">🚪 Exit Lobby</button>
+                <button id="exitLobbyBtn" class="btn-secondary">🚪 Exit Room</button>
                 <p class="start-info">Both players must click "Start Game" to begin</p>
             </div>
             <div id="gameStartCountdown" class="game-countdown" style="display: none;">
@@ -120,7 +123,7 @@
         <!-- Chat Box -->
         <div class="chat-container">
             <div class="chat-header">
-                <h3>Temple Chat</h3>
+                <h3>Room Chat</h3>
             </div>
             <div class="chat-messages" id="chatMessages">
                 <!-- Messages will appear here -->
@@ -145,7 +148,7 @@
 
             <div class="modal-actions">
                 <button id="playAgainBtn" class="btn-primary">⚔️ Battle Again</button>
-                <button id="exitGameBtn" class="btn-secondary">🚪 Leave Temple</button>
+                <button id="exitGameBtn" class="btn-secondary">🚪 Leave Room</button>
             </div>
         </div>
     </div>
@@ -173,7 +176,7 @@
         <div class="loading-content">
             <div class="temple-loader">
                 <div class="loader-ring"></div>
-                <div class="loader-text">Connecting to the Ancient Temple...</div>
+                <div class="loader-text">Connecting to Room...</div>
             </div>
         </div>
     </div>
