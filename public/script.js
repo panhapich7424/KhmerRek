@@ -26,8 +26,14 @@ const elements = {
     joinRoomBtn: document.getElementById('joinRoomBtn'),
     createRoomBtn: document.getElementById('createRoomBtn'),
     confirmCreateBtn: document.getElementById('confirmCreateBtn'),
-    cancelCreateBtn: document.getElementById('cancelCreateBtn'),
+    closeSettingsModal: document.getElementById('closeSettingsModal'),
     roomSettingsModal: document.getElementById('roomSettingsModal'),
+    joinRoomModal: document.getElementById('joinRoomModal'),
+    closeJoinModal: document.getElementById('closeJoinModal'),
+    confirmJoinBtn: document.getElementById('confirmJoinBtn'),
+    publicRoomsModal: document.getElementById('publicRoomsModal'),
+    closePublicModal: document.getElementById('closePublicModal'),
+    publicRoomsBtn: document.getElementById('publicRoomsBtn'),
     playWithBotBtn: document.getElementById('playWithBotBtn'),
     refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
     roomList: document.getElementById('roomList'),
@@ -497,6 +503,11 @@ elements.createRoomBtn.addEventListener('click', () => {
     elements.roomSettingsModal.style.display = 'flex';
 });
 
+// Create Room Modal
+elements.createRoomBtn.addEventListener('click', () => {
+    elements.roomSettingsModal.style.display = 'flex';
+});
+
 elements.confirmCreateBtn.addEventListener('click', () => {
     const roomType = document.querySelector('input[name="roomType"]:checked').value;
     const roomId = generateRoomCode();
@@ -508,14 +519,62 @@ elements.confirmCreateBtn.addEventListener('click', () => {
     socket.emit('createRoom', { roomId, isPublic: roomType === 'public' });
 });
 
-elements.cancelCreateBtn.addEventListener('click', () => {
+elements.closeSettingsModal.addEventListener('click', () => {
     elements.roomSettingsModal.style.display = 'none';
 });
 
-// Close modal when clicking backdrop
-elements.roomSettingsModal.addEventListener('click', (e) => {
-    if (e.target === elements.roomSettingsModal || e.target.classList.contains('modal-backdrop')) {
-        elements.roomSettingsModal.style.display = 'none';
+// Join Room Modal
+elements.joinRoomBtn.addEventListener('click', () => {
+    elements.joinRoomModal.style.display = 'flex';
+    elements.roomInput.focus();
+});
+
+elements.confirmJoinBtn.addEventListener('click', () => {
+    const roomId = elements.roomInput.value.trim().toUpperCase();
+    if (!roomId) {
+        showNotification('Please enter a room code', 'error');
+        return;
+    }
+
+    gameState.roomId = roomId;
+    elements.roomCode.textContent = `Room: ${roomId}`;
+
+    elements.joinRoomModal.style.display = 'none';
+    showScreen('loadingScreen');
+    socket.emit('joinRoom', roomId);
+});
+
+elements.closeJoinModal.addEventListener('click', () => {
+    elements.joinRoomModal.style.display = 'none';
+    elements.roomInput.value = '';
+});
+
+// Public Rooms Modal
+elements.publicRoomsBtn.addEventListener('click', () => {
+    elements.publicRoomsModal.style.display = 'flex';
+    refreshRoomList();
+});
+
+elements.closePublicModal.addEventListener('click', () => {
+    elements.publicRoomsModal.style.display = 'none';
+});
+
+// Close modals when clicking backdrop
+[elements.roomSettingsModal, elements.joinRoomModal, elements.publicRoomsModal].forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.classList.contains('modal-backdrop')) {
+            modal.style.display = 'none';
+            if (modal === elements.joinRoomModal) {
+                elements.roomInput.value = '';
+            }
+        }
+    });
+});
+
+// Enter key support for join room
+elements.roomInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        elements.confirmJoinBtn.click();
     }
 });
 
@@ -556,28 +615,8 @@ elements.playWithBotBtn.addEventListener('click', () => {
     showNotification('Bot game started! You play as Blue.', 'info');
 });
 
-elements.joinRoomBtn.addEventListener('click', () => {
-    const roomId = elements.roomInput.value.trim().toUpperCase();
-    if (!roomId) {
-        showNotification('Please enter a room code', 'error');
-        return;
-    }
-
-    gameState.roomId = roomId;
-    elements.roomCode.textContent = `Room: ${roomId}`;
-
-    showScreen('loadingScreen');
-    socket.emit('joinRoom', roomId);
-});
-
 elements.refreshRoomsBtn.addEventListener('click', () => {
     refreshRoomList();
-});
-
-elements.roomInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        elements.joinRoomBtn.click();
-    }
 });
 
 elements.playAgainBtn.addEventListener('click', () => {
@@ -1261,7 +1300,7 @@ socket.on('restartGame', ({ board, currentPlayer }) => {
 
     // Show gameplay controls again
     elements.gameplayControls.style.display = 'block';
-    
+
     // Show/hide bot exit button based on game type
     if (gameState.isBot) {
         elements.exitBotGameBtn.style.display = 'inline-block';

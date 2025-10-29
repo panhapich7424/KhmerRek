@@ -17,81 +17,119 @@
 
     <!-- Main Menu Screen -->
     <div id="mainMenu" class="screen active">
+        <div class="among-us-bg">
+            <div class="stars"></div>
+            <div class="planets"></div>
+        </div>
+        
         <div class="main-header">
             <h1 class="game-title">រែកខ្មែរ</h1>
-            <p class="game-subtitle">Strategic Board Game</p>
+            <div class="game-subtitle">Strategic Board Game</div>
         </div>
 
-        <div class="menu-container">
-            <!-- Quick Play Section -->
-            <div class="menu-section primary-section">
-                <div class="section-icon">🎮</div>
-                <h2>Quick Play</h2>
-                <p class="section-description">Jump into a game instantly</p>
-                <div class="quick-actions">
-                    <button id="playWithBotBtn" class="btn-large btn-bot">
-                        <span class="btn-icon">🤖</span>
-                        <span class="btn-text">
-                            <strong>Play vs AI</strong>
-                            <small>Smart opponent • Hard difficulty</small>
-                        </span>
-                    </button>
-                    <button id="createRoomBtn" class="btn-large btn-create">
-                        <span class="btn-icon">➕</span>
-                        <span class="btn-text">
-                            <strong>Create Room</strong>
-                            <small>Play with friends online</small>
-                        </span>
-                    </button>
+        <div class="menu-panel">
+            <div class="menu-buttons">
+                <button id="playWithBotBtn" class="menu-btn bot-btn">
+                    <div class="btn-icon">🤖</div>
+                    <div class="btn-content">
+                        <div class="btn-title">SINGLE PLAYER</div>
+                        <div class="btn-subtitle">Play vs Smart AI</div>
+                    </div>
+                </button>
+
+                <button id="createRoomBtn" class="menu-btn create-btn">
+                    <div class="btn-icon">➕</div>
+                    <div class="btn-content">
+                        <div class="btn-title">CREATE ROOM</div>
+                        <div class="btn-subtitle">Play with Friends</div>
+                    </div>
+                </button>
+
+                <button id="joinRoomBtn" class="menu-btn join-btn">
+                    <div class="btn-icon">🚪</div>
+                    <div class="btn-content">
+                        <div class="btn-title">JOIN ROOM</div>
+                        <div class="btn-subtitle">Enter Room Code</div>
+                    </div>
+                </button>
+
+                <button id="publicRoomsBtn" class="menu-btn public-btn">
+                    <div class="btn-icon">🌍</div>
+                    <div class="btn-content">
+                        <div class="btn-title">PUBLIC ROOMS</div>
+                        <div class="btn-subtitle">Browse Available Games</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Join Room Modal -->
+        <div id="joinRoomModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>JOIN ROOM</h3>
+                    <button id="closeJoinModal" class="close-btn">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-container">
+                        <label>Room Code</label>
+                        <input type="text" id="roomInput" placeholder="Enter 6-digit code" maxlength="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmJoinBtn" class="confirm-btn">JOIN</button>
                 </div>
             </div>
+        </div>
 
-            <!-- Join Game Section -->
-            <div class="menu-section">
-                <div class="section-icon">🚪</div>
-                <h2>Join Game</h2>
-                <div class="join-options">
-                    <div class="join-by-code">
-                        <label>Room Code</label>
-                        <div class="input-group">
-                            <input type="text" id="roomInput" placeholder="Enter 6-digit code" maxlength="10">
-                            <button id="joinRoomBtn" class="btn-primary">Join</button>
-                        </div>
-                    </div>
-                    
-                    <div class="room-list-section">
-                        <div class="room-list-header">
-                            <label>Public Rooms</label>
-                            <button id="refreshRoomsBtn" class="btn-icon-small">🔄</button>
-                        </div>
+        <!-- Public Rooms Modal -->
+        <div id="publicRoomsModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>PUBLIC ROOMS</h3>
+                    <button id="closePublicModal" class="close-btn">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="room-list-container">
+                        <button id="refreshRoomsBtn" class="refresh-btn">🔄 REFRESH</button>
                         <div id="roomList" class="room-list">
                             <div class="loading-rooms">Loading rooms...</div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Room Settings Modal (Hidden by default) -->
-            <div id="roomSettingsModal" class="settings-modal" style="display: none;">
-                <div class="modal-backdrop"></div>
-                <div class="settings-content">
-                    <h3>Room Settings</h3>
+        <!-- Room Settings Modal -->
+        <div id="roomSettingsModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>ROOM SETTINGS</h3>
+                    <button id="closeSettingsModal" class="close-btn">✕</button>
+                </div>
+                <div class="modal-body">
                     <div class="room-settings">
                         <label class="room-setting">
                             <input type="radio" name="roomType" value="public" checked>
-                            <span class="radio-label">🌍 Public Room</span>
-                            <small>Visible in room list for everyone</small>
+                            <div class="setting-content">
+                                <div class="setting-title">🌍 Public Room</div>
+                                <div class="setting-desc">Visible to everyone</div>
+                            </div>
                         </label>
                         <label class="room-setting">
                             <input type="radio" name="roomType" value="private">
-                            <span class="radio-label">🔒 Private Room</span>
-                            <small>Hidden, only accessible with room code</small>
+                            <div class="setting-content">
+                                <div class="setting-title">🔒 Private Room</div>
+                                <div class="setting-desc">Hidden from public list</div>
+                            </div>
                         </label>
                     </div>
-                    <div class="modal-actions">
-                        <button id="confirmCreateBtn" class="btn-primary">Create Room</button>
-                        <button id="cancelCreateBtn" class="btn-secondary">Cancel</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmCreateBtn" class="confirm-btn">CREATE</button>
                 </div>
             </div>
         </div>
@@ -144,8 +182,16 @@
                 <p>Game starting in <span id="countdownNumber">3</span>...</p>
             </div>
             <div id="gameplayControls" class="gameplay-controls" style="display: none;">
-                <button id="requestRestartBtn" class="btn-secondary">🔄 Request Restart</button>
-                <button id="exitBotGameBtn" class="btn-secondary" style="display: none;">🚪 Exit Game</button>
+                <div class="game-actions">
+                    <button id="requestRestartBtn" class="game-btn restart-btn">
+                        <span class="btn-icon">🔄</span>
+                        <span class="btn-text">RESTART</span>
+                    </button>
+                    <button id="exitBotGameBtn" class="game-btn exit-btn" style="display: none;">
+                        <span class="btn-icon">🚪</span>
+                        <span class="btn-text">EXIT</span>
+                    </button>
+                </div>
             </div>
         </div>
 
