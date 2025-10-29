@@ -357,18 +357,26 @@ io.on('connection', (socket) => {
 
         if (isValidMove(room.board, from, to, room.currentPlayer)) {
             room.board = makeMove(room.board, from, to, room.currentPlayer);
+            
+            // Store last move for highlighting
+            room.lastMove = { from, to, player: room.currentPlayer };
 
             // Check for winner
             const winner = checkWinner(room.board);
             if (winner) {
                 room.gameStarted = false;
-                io.to(roomId).emit('gameOver', { winner, board: room.board });
+                io.to(roomId).emit('gameOver', { 
+                    winner, 
+                    board: room.board,
+                    lastMove: room.lastMove 
+                });
             } else {
                 // Switch turns
                 room.currentPlayer = room.currentPlayer === 'Blue' ? 'Red' : 'Blue';
                 io.to(roomId).emit('updateBoard', {
                     board: room.board,
-                    currentPlayer: room.currentPlayer
+                    currentPlayer: room.currentPlayer,
+                    lastMove: room.lastMove
                 });
             }
         }

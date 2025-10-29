@@ -9,7 +9,8 @@ let gameState = {
     currentPlayer: 'Blue',
     board: [],
     selectedSquare: null,
-    gameStarted: false
+    gameStarted: false,
+    lastMove: null // Track last move for highlighting
 };
 
 // DOM elements
@@ -204,6 +205,9 @@ const handleSquareClick = (displayRow, displayCol) => {
         const actualFrom = getActualCoordinates(gameState.selectedSquare.row, gameState.selectedSquare.col);
         const actualTo = getActualCoordinates(displayRow, displayCol);
         
+        // Store the move for highlighting
+        gameState.lastMove = { from: actualFrom, to: actualTo };
+        
         socket.emit('makeMove', {
             roomId: gameState.roomId,
             from: actualFrom,
@@ -345,6 +349,40 @@ const clearSelection = () => {
     document.querySelectorAll('.board-square.valid-move').forEach(square => {
         square.classList.remove('valid-move');
     });
+};
+
+const clearMoveHighlights = () => {
+    // Remove previous last move highlights
+    document.querySelectorAll('.board-square.last-move-from').forEach(square => {
+        square.classList.remove('last-move-from');
+    });
+    
+    document.querySelectorAll('.board-square.last-move-to').forEach(square => {
+        square.classList.remove('last-move-to');
+    });
+};
+
+const highlightLastMove = (from, to) => {
+    // Clear previous last move highlights
+    clearMoveHighlights();
+    
+    if (from && to) {
+        // Convert actual coordinates to display coordinates for highlighting
+        const [displayFromRow, displayFromCol] = getDisplayCoordinates(from[0], from[1]);
+        const [displayToRow, displayToCol] = getDisplayCoordinates(to[0], to[1]);
+        
+        // Highlight the "from" square (where piece moved from)
+        const fromSquare = document.querySelector(`[data-row="${displayFromRow}"][data-col="${displayFromCol}"]`);
+        if (fromSquare) {
+            fromSquare.classList.add('last-move-from');
+        }
+        
+        // Highlight the "to" square (where piece moved to)
+        const toSquare = document.querySelector(`[data-row="${displayToRow}"][data-col="${displayToCol}"]`);
+        if (toSquare) {
+            toSquare.classList.add('last-move-to');
+        }
+    }
 };
 
 const updateTurnIndicator = (currentPlayer) => {
@@ -587,11 +625,13 @@ socket.on('gameStartCountdown', ({ count }) => {
 socket.on('startGame', ({ board, currentPlayer, players }) => {
     gameState.gameStarted = true;
     gameState.currentPlayer = currentPlayer;
+    gameState.lastMove = null;
     
     showScreen('gameScreen');
     createBoard();
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
+    clearMoveHighlights();
     
     // Hide all start game UI elements
     elements.copyRoomBtn.style.display = 'none';
@@ -604,27 +644,42 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
     // elements.bgMusic.play().catch(() => {}); // Ignore autoplay restrictions
 });
 
-socket.on('updateBoard', ({ board, currentPlayer }) => {
+socket.on('updateBoard', ({ board, currentPlayer, lastMove }) => {
     gameState.currentPlayer = currentPlayer;
+    gameState.lastMove = lastMove;
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     clearSelection();
+    
+    // Highlight the last move
+    if (lastMove) {
+        highlightLastMove(lastMove.from, lastMove.to);
+    }
 });
 
-socket.on('gameOver', ({ winner, board }) => {
+socket.on('gameOver', ({ winner, board, lastMove }) => {
     gameState.gameStarted = false;
+    gameState.lastMove = lastMove;
     updateBoard(board);
+    
+    // Highlight the winning move
+    if (lastMove) {
+        highlightLastMove(lastMove.from, lastMove.to);
+    }
+    
     showGameOverModal(winner);
 });
 
 socket.on('restartGame', ({ board, currentPlayer }) => {
     gameState.gameStarted = true;
     gameState.currentPlayer = currentPlayer;
+    gameState.lastMove = null;
     
     hideGameOverModal();
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     clearSelection();
+    clearMoveHighlights();
     
     // Reset button state
     elements.playAgainBtn.disabled = false;
