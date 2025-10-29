@@ -274,6 +274,7 @@ io.on('connection', (socket) => {
                 currentPlayer: 'Blue', // Blue starts first in Rek
                 gameStarted: false,
                 playAgainVotes: new Set(),
+                restartRequests: new Set(),
                 chatMessages: [],
                 readyPlayers: new Set(),
                 isPublic: isPublic,
@@ -449,6 +450,7 @@ io.on('connection', (socket) => {
                 room.playAgainVotes.clear();
                 room.chatMessages = [];
                 room.readyPlayers.clear();
+                room.restartRequests.clear(); // Clear any pending restart requests
 
                 io.to(roomId).emit('restartGame', {
                     board: room.board,
@@ -458,6 +460,88 @@ io.on('connection', (socket) => {
         } else if (choice === 'exit') {
             io.to(roomId).emit('endSession');
             rooms.delete(roomId);
+        }
+    });
+
+    // Handle restart request during gameplay
+    socket.on('requestRestart', ({ roomId }) => {
+        const room = rooms.get(roomId);
+        if (!room || !room.gameStarted) return;
+
+        const requester = room.players.find(p => p.id === socket.id);
+        if (!requester) return;
+
+        // Initialize restart requests set if it doesn't exist
+        if (!room.restartRequests) {
+            room.restartRequests = new Set();
+        }
+
+        room.restartRequests.add(socket.id);
+
+        // Notify the other player about the restart request
+        const otherPlayer = room.players.find(p => p.id !== socket.id);
+        if (otherPlayer) {
+            socket.to(roomId).emit('restartRequested', {
+                requesterName: requester.color
+            });
+        }
+    });
+
+    // Handle restart response
+    socket.on('restartResponse', ({ roomId, accepted }) => {
+        const room = rooms.get(roomId);
+        if (!room || !room.gameStarted) return;
+
+        const responder = room.players.find(p => p.id === socket.id);
+        if (!responder) return;
+
+        if (accepted) {
+            // Restart the game
+            room.board = createInitialBoard();
+            room.currentPlayer = 'Blue';
+            room.gameStarted = true;
+            room.chatMessages = [];
+            room.readyPlayers.clear();
+            room.restartRequests.clear();
+
+            io.to(roomId).emit('restartRequestAccepted');
+            io.to(roomId).emit('restartGame', {
+                board: room.board,
+                currentPlayer: room.currentPlayer
+            });
+        } else {
+            // Decline the restart
+            room.restartRequests.clear();
+            socket.to(roomId).emit('restartRequestDeclined', {
+                declinerName: responder.color
+            });
+        }
+    });
+
+    // Handle exit lobby (before game starts)
+    socket.on('exitLobby', ({ roomId }) => {
+        const room = rooms.get(roomId);
+        if (!room || room.gameStarted) return;
+
+        const playerIndex = room.players.findIndex(p => p.id === socket.id);
+        if (playerIndex !== -1) {
+            const wasPublic = room.isPublic;
+            room.players.splice(playerIndex, 1);
+
+            // Notify the player they've left
+            socket.emit('exitedLobby');
+
+            if (room.players.length === 0) {
+                rooms.delete(roomId);
+            } else {
+                // Notify remaining player
+                socket.to(roomId).emit('playerDisconnected');
+            }
+
+            // Update room list if it was a public room
+            if (wasPublic) {
+                broadcastRoomList();
+            }
         }
     });
 

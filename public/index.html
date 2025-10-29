@@ -106,10 +106,14 @@
             <p id="statusMessage">Waiting for opponent...</p>
             <div id="gameStartControls" class="game-start-controls" style="display: none;">
                 <button id="startGameBtn" class="btn-primary">🎮 Start Game</button>
+                <button id="exitLobbyBtn" class="btn-secondary">🚪 Exit Lobby</button>
                 <p class="start-info">Both players must click "Start Game" to begin</p>
             </div>
             <div id="gameStartCountdown" class="game-countdown" style="display: none;">
                 <p>Game starting in <span id="countdownNumber">3</span>...</p>
+            </div>
+            <div id="gameplayControls" class="gameplay-controls" style="display: none;">
+                <button id="requestRestartBtn" class="btn-secondary">🔄 Request Restart</button>
             </div>
         </div>
 
@@ -142,6 +146,24 @@
             <div class="modal-actions">
                 <button id="playAgainBtn" class="btn-primary">⚔️ Battle Again</button>
                 <button id="exitGameBtn" class="btn-secondary">🚪 Leave Temple</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restart Request Modal -->
+    <div id="restartRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="request-announcement">
+                <div class="golden-frame">
+                    <h2 id="restartRequestText">Restart Request</h2>
+                    <div class="request-icon">🔄</div>
+                    <p id="restartRequestMessage">Your opponent wants to restart the game. Do you agree?</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="acceptRestartBtn" class="btn-primary">✅ Accept</button>
+                <button id="declineRestartBtn" class="btn-secondary">❌ Decline</button>
             </div>
         </div>
     </div>

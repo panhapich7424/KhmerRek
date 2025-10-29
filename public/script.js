@@ -47,9 +47,17 @@ const elements = {
     sendMessageBtn: document.getElementById('sendMessageBtn'),
     gameStartControls: document.getElementById('gameStartControls'),
     startGameBtn: document.getElementById('startGameBtn'),
+    exitLobbyBtn: document.getElementById('exitLobbyBtn'),
     gameStartCountdown: document.getElementById('gameStartCountdown'),
     countdownNumber: document.getElementById('countdownNumber'),
-    orientationText: document.getElementById('orientationText')
+    orientationText: document.getElementById('orientationText'),
+    gameplayControls: document.getElementById('gameplayControls'),
+    requestRestartBtn: document.getElementById('requestRestartBtn'),
+    restartRequestModal: document.getElementById('restartRequestModal'),
+    restartRequestText: document.getElementById('restartRequestText'),
+    restartRequestMessage: document.getElementById('restartRequestMessage'),
+    acceptRestartBtn: document.getElementById('acceptRestartBtn'),
+    declineRestartBtn: document.getElementById('declineRestartBtn')
 };
 
 // Utility functions
@@ -412,6 +420,15 @@ const hideGameOverModal = () => {
     elements.gameOverModal.classList.remove('active');
 };
 
+const showRestartRequestModal = (requesterName) => {
+    elements.restartRequestMessage.textContent = `${requesterName} wants to restart the game. Do you agree?`;
+    elements.restartRequestModal.classList.add('active');
+};
+
+const hideRestartRequestModal = () => {
+    elements.restartRequestModal.classList.remove('active');
+};
+
 // Room management functions
 const refreshRoomList = () => {
     socket.emit('getRoomList');
@@ -549,6 +566,27 @@ elements.startGameBtn.addEventListener('click', () => {
     showNotification('Waiting for opponent to be ready...', 'info');
 });
 
+elements.exitLobbyBtn.addEventListener('click', () => {
+    socket.emit('exitLobby', { roomId: gameState.roomId });
+});
+
+elements.requestRestartBtn.addEventListener('click', () => {
+    socket.emit('requestRestart', { roomId: gameState.roomId });
+    elements.requestRestartBtn.disabled = true;
+    elements.requestRestartBtn.textContent = '⏳ Requesting...';
+    showNotification('Restart request sent to opponent', 'info');
+});
+
+elements.acceptRestartBtn.addEventListener('click', () => {
+    socket.emit('restartResponse', { roomId: gameState.roomId, accepted: true });
+    hideRestartRequestModal();
+});
+
+elements.declineRestartBtn.addEventListener('click', () => {
+    socket.emit('restartResponse', { roomId: gameState.roomId, accepted: false });
+    hideRestartRequestModal();
+});
+
 const sendMessage = () => {
     const message = elements.messageInput.value.trim();
     if (message && gameState.roomId) {
@@ -633,10 +671,11 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
     updateTurnIndicator(currentPlayer);
     clearMoveHighlights();
     
-    // Hide all start game UI elements
+    // Hide all start game UI elements and show gameplay controls
     elements.copyRoomBtn.style.display = 'none';
     elements.gameStartControls.style.display = 'none';
     elements.gameStartCountdown.style.display = 'none';
+    elements.gameplayControls.style.display = 'block';
     
     showNotification(`The sacred battle begins! ${currentPlayer} moves first.`, 'info');
     
@@ -662,6 +701,9 @@ socket.on('gameOver', ({ winner, board, lastMove }) => {
     gameState.lastMove = lastMove;
     updateBoard(board);
     
+    // Hide gameplay controls when game is over
+    elements.gameplayControls.style.display = 'none';
+    
     // Highlight the winning move
     if (lastMove) {
         highlightLastMove(lastMove.from, lastMove.to);
@@ -676,14 +718,20 @@ socket.on('restartGame', ({ board, currentPlayer }) => {
     gameState.lastMove = null;
     
     hideGameOverModal();
+    hideRestartRequestModal();
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     clearSelection();
     clearMoveHighlights();
     
-    // Reset button state
+    // Reset button states
     elements.playAgainBtn.disabled = false;
     elements.playAgainBtn.textContent = '⚔️ Battle Again';
+    elements.requestRestartBtn.disabled = false;
+    elements.requestRestartBtn.textContent = '🔄 Request Restart';
+    
+    // Show gameplay controls again
+    elements.gameplayControls.style.display = 'block';
     
     showNotification('A new battle begins!', 'info');
 });
@@ -740,6 +788,39 @@ socket.on('roomListUpdated', (rooms) => {
 socket.on('disconnect', () => {
     console.log('Disconnected from temple server');
     showNotification('Connection to temple lost. Attempting to reconnect...', 'error');
+});
+
+socket.on('restartRequested', ({ requesterName }) => {
+    showRestartRequestModal(requesterName);
+    showNotification(`${requesterName} requested a restart`, 'info');
+});
+
+socket.on('restartRequestDeclined', ({ declinerName }) => {
+    elements.requestRestartBtn.disabled = false;
+    elements.requestRestartBtn.textContent = '🔄 Request Restart';
+    showNotification(`${declinerName} declined the restart request`, 'error');
+});
+
+socket.on('restartRequestAccepted', () => {
+    hideRestartRequestModal();
+    showNotification('Restart request accepted! Starting new game...', 'info');
+});
+
+socket.on('exitedLobby', () => {
+    showScreen('mainMenu');
+    gameState = {
+        roomId: null,
+        playerColor: null,
+        playerPiece: null,
+        currentPlayer: 'Blue',
+        board: [],
+        selectedSquare: null,
+        gameStarted: false,
+        lastMove: null
+    };
+    
+    elements.roomInput.value = '';
+    showNotification('Left the lobby', 'info');
 });
 
 // Initialize the game
