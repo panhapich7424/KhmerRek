@@ -275,7 +275,6 @@ io.on('connection', (socket) => {
                 gameStarted: false,
                 playAgainVotes: new Set(),
                 restartRequests: new Set(),
-                chatMessages: [],
                 readyPlayers: new Set(),
                 isPublic: isPublic,
                 createdAt: Date.now()
@@ -383,22 +382,21 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle chat message
-    socket.on('sendMessage', ({ roomId, message }) => {
+    // Handle emoji reactions and quick text
+    socket.on('sendReaction', ({ roomId, type, content, player }) => {
         const room = rooms.get(roomId);
         if (!room) return;
 
-        const player = room.players.find(p => p.id === socket.id);
-        if (!player) return;
+        const playerObj = room.players.find(p => p.id === socket.id);
+        if (!playerObj) return;
 
-        const chatMessage = {
-            player: player.color,
-            message: message,
+        // Broadcast reaction to all players in the room
+        io.to(roomId).emit('newReaction', {
+            player: playerObj.color,
+            type: type,
+            content: content,
             timestamp: Date.now()
-        };
-
-        room.chatMessages.push(chatMessage);
-        io.to(roomId).emit('newMessage', chatMessage);
+        });
     });
 
     // Handle player ready
@@ -448,7 +446,6 @@ io.on('connection', (socket) => {
                 room.currentPlayer = 'Blue'; // Blue always starts first
                 room.gameStarted = true;
                 room.playAgainVotes.clear();
-                room.chatMessages = [];
                 room.readyPlayers.clear();
                 room.restartRequests.clear(); // Clear any pending restart requests
 
@@ -500,7 +497,6 @@ io.on('connection', (socket) => {
             room.board = createInitialBoard();
             room.currentPlayer = 'Blue';
             room.gameStarted = true;
-            room.chatMessages = [];
             room.readyPlayers.clear();
             room.restartRequests.clear();
 

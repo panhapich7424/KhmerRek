@@ -2185,8 +2185,7 @@ t Button */
         width: 100%;
         justify-content: center;
     }
-}/
-* Turn Timer */
+}
 .turn-timer {
     text-align: center;
     margin-top: 1rem;
@@ -2243,4 +2242,213 @@ t Button */
 .turn-timer.opponent-turn {
     border-color: #ff6b6b;
     box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}/* 
+Sound Toggle Button */
+.sound-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(145deg, #3a4a5c, #2a3441);
+    border: 3px solid #5a6a7c;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.sound-toggle:hover {
+    background: linear-gradient(145deg, #4a5a6c, #3a4a5c);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.sound-toggle:active {
+    transform: scale(0.95);
+}/* Emoji R
+eactions & Quick Text */
+.reactions-container {
+    background: linear-gradient(145deg, #3a4a5c, #2a3441);
+    border: 2px solid #5a6a7c;
+    border-radius: 15px;
+    padding: 1rem;
+    margin-top: 1rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.reactions-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.reactions-header h3 {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+/* Emoji Reactions */
+.emoji-reactions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.emoji-btn {
+    background: linear-gradient(145deg, #4a5a6c, #3a4a5c);
+    border: 2px solid #6a7a8c;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+}
+
+.emoji-btn:hover {
+    background: linear-gradient(145deg, #5a6a7c, #4a5a6c);
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.emoji-btn:active {
+    transform: scale(0.95);
+}
+
+/* Quick Text Messages */
+.quick-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-text-btn {
+    background: linear-gradient(145deg, #ff6b6b, #e55555);
+    border: 2px solid #ff8e8e;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.quick-text-btn:hover {
+    background: linear-gradient(145deg, #ff8e8e, #ff6b6b);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+}
+
+.quick-text-btn:active {
+    transform: translateY(0);
+}
+
+/* Reaction Display */
+.reaction-display {
+    min-height: 60px;
+    max-height: 120px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #5a6a7c;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.reaction-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #ffffff;
+    animation: slideInReaction 0.3s ease;
+}
+
+@keyframes slideInReaction {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.reaction-emoji {
+    font-size: 1.2rem;
+}
+
+.reaction-text {
+    flex: 1;
+}
+
+.reaction-player {
+    font-size: 0.8rem;
+    color: #c0c0c0;
+    opacity: 0.8;
+}
+
+.reaction-item.own-reaction {
+    background: rgba(78, 205, 196, 0.1);
+    border-radius: 5px;
+    padding: 0.25rem 0.5rem;
+}
+
+.reaction-item.opponent-reaction {
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 5px;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Empty state */
+.reaction-display:empty::before {
+    content: "No reactions yet...";
+    color: #888;
+    font-style: italic;
+    display: block;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .reactions-container {
+        max-width: 100%;
+        margin: 1rem;
+    }
+    
+    .emoji-reactions {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .emoji-btn {
+        padding: 0.5rem;
+        font-size: 1.3rem;
+        min-height: 45px;
+    }
+    
+    .quick-text-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
 }

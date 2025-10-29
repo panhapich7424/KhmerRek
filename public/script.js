@@ -16,6 +16,152 @@ let gameState = {
     timerInterval: null // Timer interval reference
 };
 
+// Sound System
+const SoundManager = {
+    sounds: {},
+    enabled: true,
+    volume: 0.7,
+    audioContext: null,
+    
+    init() {
+        // Load preferences
+        this.loadPreferences();
+        
+        // Initialize audio context
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (error) {
+            console.log('Web Audio API not supported');
+            return;
+        }
+        
+        // Generate procedural sounds
+        this.generateSounds();
+        
+        // Add sound toggle button
+        this.createSoundToggle();
+    },
+    
+    generateSounds() {
+        if (!this.audioContext) return;
+        
+        // Create different sound effects
+        this.sounds.clickBuffer = this.createToneBuffer(800, 0.1, 0.05);
+        this.sounds.moveBuffer = this.createSweepBuffer(400, 600, 0.3, 0.2);
+        this.sounds.captureBuffer = this.createSweepBuffer(600, 300, 0.5, 0.3);
+        this.sounds.winBuffer = this.createChordBuffer([523, 659, 784, 1047], 1, 0.8);
+        this.sounds.loseBuffer = this.createSweepBuffer(300, 150, 0.8, 0.6);
+        this.sounds.notificationBuffer = this.createToneBuffer(1000, 0.2, 0.1);
+        this.sounds.errorBuffer = this.createNoiseBuffer(200, 0.3, 0.2);
+        this.sounds.joinBuffer = this.createSweepBuffer(400, 800, 0.4, 0.3);
+    },
+    
+    createToneBuffer(frequency, duration, decay) {
+        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < data.length; i++) {
+            data[i] = Math.sin(2 * Math.PI * frequency * i / this.audioContext.sampleRate) * 
+                     Math.exp(-i / (this.audioContext.sampleRate * decay));
+        }
+        
+        return buffer;
+    },
+    
+    createSweepBuffer(startFreq, endFreq, duration, decay) {
+        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < data.length; i++) {
+            const progress = i / data.length;
+            const freq = startFreq + (endFreq - startFreq) * progress;
+            data[i] = Math.sin(2 * Math.PI * freq * i / this.audioContext.sampleRate) * 
+                     Math.exp(-i / (this.audioContext.sampleRate * decay));
+        }
+        
+        return buffer;
+    },
+    
+    createChordBuffer(frequencies, duration, decay) {
+        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < data.length; i++) {
+            let sample = 0;
+            frequencies.forEach(freq => {
+                sample += Math.sin(2 * Math.PI * freq * i / this.audioContext.sampleRate) * (1 / frequencies.length);
+            });
+            data[i] = sample * Math.exp(-i / (this.audioContext.sampleRate * decay));
+        }
+        
+        return buffer;
+    },
+    
+    createNoiseBuffer(baseFreq, duration, decay) {
+        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < data.length; i++) {
+            const freq = baseFreq + Math.sin(i / 100) * 50;
+            data[i] = Math.sin(2 * Math.PI * freq * i / this.audioContext.sampleRate) * 
+                     Math.exp(-i / (this.audioContext.sampleRate * decay));
+        }
+        
+        return buffer;
+    },
+    
+    createSoundToggle() {
+        const soundToggle = document.createElement('button');
+        soundToggle.id = 'soundToggle';
+        soundToggle.innerHTML = this.enabled ? '🔊' : '🔇';
+        soundToggle.className = 'sound-toggle';
+        soundToggle.title = 'Toggle Sound';
+        
+        soundToggle.addEventListener('click', () => {
+            this.toggle();
+            soundToggle.innerHTML = this.enabled ? '🔊' : '🔇';
+            this.play('click');
+        });
+        
+        document.body.appendChild(soundToggle);
+    },
+    
+    play(soundName) {
+        if (!this.enabled || !this.audioContext) return;
+        
+        try {
+            const bufferName = soundName + 'Buffer';
+            
+            if (this.sounds[bufferName]) {
+                const source = this.audioContext.createBufferSource();
+                const gainNode = this.audioContext.createGain();
+                
+                source.buffer = this.sounds[bufferName];
+                gainNode.gain.value = this.volume;
+                
+                source.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                source.start();
+            }
+        } catch (error) {
+            console.log('Audio playback failed:', error);
+        }
+    },
+    
+    toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem('soundEnabled', this.enabled);
+    },
+    
+    loadPreferences() {
+        const saved = localStorage.getItem('soundEnabled');
+        if (saved !== null) {
+            this.enabled = saved === 'true';
+        }
+    }
+};
+
 // DOM elements
 const screens = {
     mainMenu: document.getElementById('mainMenu'),
@@ -55,9 +201,7 @@ const elements = {
     playAgainBtn: document.getElementById('playAgainBtn'),
     exitGameBtn: document.getElementById('exitGameBtn'),
     bgMusic: document.getElementById('bgMusic'),
-    chatMessages: document.getElementById('chatMessages'),
-    messageInput: document.getElementById('messageInput'),
-    sendMessageBtn: document.getElementById('sendMessageBtn'),
+    reactionDisplay: document.getElementById('reactionDisplay'),
     waitingControls: document.getElementById('waitingControls'),
     exitRoomBtn: document.getElementById('exitRoomBtn'),
     gameStartControls: document.getElementById('gameStartControls'),
@@ -90,6 +234,13 @@ const generateRoomCode = () => {
 };
 
 const showNotification = (message, type = 'info') => {
+    // Play appropriate sound
+    if (type === 'error') {
+        SoundManager.play('error');
+    } else {
+        SoundManager.play('notification');
+    }
+    
     // Simple notification system
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -235,6 +386,9 @@ const handleSquareClick = (displayRow, displayCol) => {
         // Store the move for highlighting
         gameState.lastMove = { from: actualFrom, to: actualTo };
 
+        // Play move sound
+        SoundManager.play('move');
+
         if (gameState.isBot) {
             // Handle bot game locally
             executeBotGameMove(actualFrom, actualTo);
@@ -277,10 +431,12 @@ const handlePieceClick = (displayRow, displayCol) => {
     console.log(`Player pieces: ${playerPieces}, clicked piece: ${piece}`);
 
     if (playerPieces.includes(piece)) {
+        SoundManager.play('click');
         clearSelection();
         selectPiece(displayRow, displayCol);
         showNotification(`Selected ${piece} piece`, 'info');
     } else {
+        SoundManager.play('error');
         showNotification('That\'s not your piece!', 'error');
     }
 };
@@ -421,6 +577,13 @@ const highlightLastMove = (from, to) => {
 
 
 const showGameOverModal = (winner) => {
+    // Play win/lose sound
+    if (winner === gameState.playerColor) {
+        SoundManager.play('win');
+    } else {
+        SoundManager.play('lose');
+    }
+    
     elements.winnerText.textContent = `${winner} Wins!`;
     elements.winnerMessage.textContent = winner === gameState.playerColor
         ? "Victory is yours! Well played!"
@@ -591,10 +754,12 @@ elements.createRoomBtn.addEventListener('click', () => {
 
 // Create Room Modal
 elements.createRoomBtn.addEventListener('click', () => {
+    SoundManager.play('click');
     elements.roomSettingsModal.style.display = 'flex';
 });
 
 elements.confirmCreateBtn.addEventListener('click', () => {
+    SoundManager.play('click');
     const roomType = document.querySelector('input[name="roomType"]:checked').value;
     const roomId = generateRoomCode();
     gameState.roomId = roomId;
@@ -611,6 +776,7 @@ elements.closeSettingsModal.addEventListener('click', () => {
 
 // Join Room Modal
 elements.joinRoomBtn.addEventListener('click', () => {
+    SoundManager.play('click');
     elements.joinRoomModal.style.display = 'flex';
     elements.roomInput.focus();
 });
@@ -637,6 +803,7 @@ elements.closeJoinModal.addEventListener('click', () => {
 
 // Public Rooms Modal
 elements.publicRoomsBtn.addEventListener('click', () => {
+    SoundManager.play('click');
     elements.publicRoomsModal.style.display = 'flex';
     refreshRoomList();
 });
@@ -665,6 +832,7 @@ elements.roomInput.addEventListener('keypress', (e) => {
 });
 
 elements.playWithBotBtn.addEventListener('click', () => {
+    SoundManager.play('click');
     gameState.roomId = 'BOT_GAME';
     gameState.isBot = true;
     gameState.playerColor = 'Blue';
@@ -832,24 +1000,78 @@ elements.exitBotGameBtn.addEventListener('click', () => {
     showNotification('Returned to main menu', 'info');
 });
 
-const sendMessage = () => {
-    const message = elements.messageInput.value.trim();
-    if (message && gameState.roomId) {
-        socket.emit('sendMessage', {
-            roomId: gameState.roomId,
-            message: message
-        });
-        elements.messageInput.value = '';
-    }
+// Emoji Reactions System
+const sendReaction = (type, content) => {
+    if (!gameState.roomId || gameState.isBot) return;
+    
+    SoundManager.play('notification');
+    
+    socket.emit('sendReaction', {
+        roomId: gameState.roomId,
+        type: type, // 'emoji' or 'text'
+        content: content,
+        player: gameState.playerColor
+    });
 };
 
-const addChatMessage = (player, message) => {
-    const messageElement = document.createElement('div');
-    messageElement.className = `chat-message ${player.toLowerCase()}`;
-    messageElement.textContent = `${player}: ${message}`;
+const addReaction = (player, type, content) => {
+    const reactionElement = document.createElement('div');
+    const isOwnReaction = player === gameState.playerColor;
+    
+    reactionElement.className = `reaction-item ${isOwnReaction ? 'own-reaction' : 'opponent-reaction'}`;
+    
+    if (type === 'emoji') {
+        reactionElement.innerHTML = `
+            <span class="reaction-emoji">${content}</span>
+            <span class="reaction-player">${isOwnReaction ? 'You' : 'Opponent'}</span>
+        `;
+    } else {
+        reactionElement.innerHTML = `
+            <span class="reaction-text">${content}</span>
+            <span class="reaction-player">${isOwnReaction ? 'You' : 'Opponent'}</span>
+        `;
+    }
+    
+    elements.reactionDisplay.appendChild(reactionElement);
+    elements.reactionDisplay.scrollTop = elements.reactionDisplay.scrollHeight;
+    
+    // Auto-remove reaction after 5 seconds
+    setTimeout(() => {
+        if (reactionElement.parentNode) {
+            reactionElement.remove();
+        }
+    }, 5000);
+};
 
-    elements.chatMessages.appendChild(messageElement);
-    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+// Initialize emoji and quick text event listeners
+const initializeReactions = () => {
+    // Emoji buttons
+    document.querySelectorAll('.emoji-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const emoji = btn.dataset.emoji;
+            sendReaction('emoji', emoji);
+            
+            // Visual feedback
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                btn.style.transform = '';
+            }, 200);
+        });
+    });
+    
+    // Quick text buttons
+    document.querySelectorAll('.quick-text-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const text = btn.dataset.text;
+            sendReaction('text', text);
+            
+            // Visual feedback
+            btn.style.transform = 'translateY(-3px)';
+            setTimeout(() => {
+                btn.style.transform = '';
+            }, 200);
+        });
+    });
 };
 
 // Bot AI Logic
@@ -953,6 +1175,7 @@ const botAI = {
     checkRekCaptures: (board, toRow, toCol, currentPlayer) => {
         const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
         const opponentPieces = currentPlayer === 'Blue' ? ['X', 'R'] : ['O', 'P'];
+        let capturesMade = false;
 
         // Check horizontal and vertical directions for Rek captures
         const directions = [
@@ -981,9 +1204,15 @@ const botAI = {
                 if (opponentPieces.includes(piece1) && opponentPieces.includes(piece2)) {
                     board[pos1Row][pos1Col] = 'H';
                     board[pos2Row][pos2Col] = 'H';
+                    capturesMade = true;
                 }
             }
         });
+
+        // Play capture sound if any captures were made
+        if (capturesMade) {
+            SoundManager.play('capture');
+        }
     },
 
     // Check for group trapping captures - same as server
@@ -1008,10 +1237,12 @@ const botAI = {
                     }
 
                     // If no piece in the group has legal moves, capture the entire group
-                    if (!hasLegalMove) {
+                    if (!hasLegalMove && group.length > 0) {
                         group.forEach(([r, c]) => {
                             board[r][c] = 'H';
                         });
+                        // Play capture sound for trapped pieces
+                        SoundManager.play('capture');
                     }
                 }
             }
@@ -1296,6 +1527,7 @@ socket.on('playerAssigned', ({ color, piece }) => {
 });
 
 socket.on('bothPlayersJoined', () => {
+    SoundManager.play('join');
     elements.statusMessage.textContent = 'Both players connected! Click "Start Game" when ready.';
     elements.waitingControls.style.display = 'none';
     elements.gameStartControls.style.display = 'block';
@@ -1502,8 +1734,19 @@ socket.on('exitedLobby', () => {
     showNotification('Left the lobby', 'info');
 });
 
+// Socket event for reactions
+socket.on('newReaction', ({ player, type, content }) => {
+    addReaction(player, type, content);
+});
+
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize sound system
+    SoundManager.init();
+    
+    // Initialize emoji reactions
+    initializeReactions();
+    
     showScreen('mainMenu');
 
     // Load room list when page loads

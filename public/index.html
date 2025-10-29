@@ -201,17 +201,35 @@
             </div>
         </div>
 
-        <!-- Chat Box -->
-        <div class="chat-container">
-            <div class="chat-header">
-                <h3>Room Chat</h3>
+        <!-- Emoji Reactions & Quick Text -->
+        <div class="reactions-container">
+            <div class="reactions-header">
+                <h3>Quick Reactions</h3>
             </div>
-            <div class="chat-messages" id="chatMessages">
-                <!-- Messages will appear here -->
+            
+            <!-- Emoji Reactions -->
+            <div class="emoji-reactions">
+                <button class="emoji-btn" data-emoji="😂" title="Laugh">😂</button>
+                <button class="emoji-btn" data-emoji="😎" title="Cool">😎</button>
+                <button class="emoji-btn" data-emoji="🤔" title="Think">🤔</button>
+                <button class="emoji-btn" data-emoji="😤" title="Angry">😤</button>
+                <button class="emoji-btn" data-emoji="👍" title="Good">👍</button>
+                <button class="emoji-btn" data-emoji="👎" title="Bad">👎</button>
+                <button class="emoji-btn" data-emoji="🔥" title="Fire">🔥</button>
+                <button class="emoji-btn" data-emoji="💯" title="Perfect">💯</button>
             </div>
-            <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="Type your message..." maxlength="100">
-                <button id="sendMessageBtn">Send</button>
+            
+            <!-- Quick Text Messages -->
+            <div class="quick-text">
+                <button class="quick-text-btn" data-text="HAHA!">HAHA!</button>
+                <button class="quick-text-btn" data-text="ចុះចាញ់ទៅ">ចុះចាញ់ទៅ</button>
+                <button class="quick-text-btn" data-text="ចង់មិច?">ចង់មិច?</button>
+                <button class="quick-text-btn" data-text="លេងខូចម៉េស?">លេងខូចម៉េស?</button>
+            </div>
+            
+            <!-- Reaction Display -->
+            <div class="reaction-display" id="reactionDisplay">
+                <!-- Reactions will appear here -->
             </div>
         </div>
     </div>
@@ -262,10 +280,46 @@
         </div>
     </div>
 
-    <!-- Audio (Optional) -->
-    <audio id="bgMusic" loop>
-        <source src="assets/bg-music.mp3" type="audio/mpeg">
-    </audio>
+    <!-- Audio System -->
+    <div id="audioSystem" style="display: none;">
+        <!-- Background Music -->
+        <audio id="bgMusic" loop preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <!-- Sound Effects -->
+        <audio id="clickSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="moveSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="captureSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="winSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="loseSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="notificationSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="errorSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        
+        <audio id="joinSound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
