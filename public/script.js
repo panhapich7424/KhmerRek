@@ -60,6 +60,7 @@ const elements = {
     orientationText: document.getElementById('orientationText'),
     gameplayControls: document.getElementById('gameplayControls'),
     requestRestartBtn: document.getElementById('requestRestartBtn'),
+    exitBotGameBtn: document.getElementById('exitBotGameBtn'),
     restartRequestModal: document.getElementById('restartRequestModal'),
     restartRequestText: document.getElementById('restartRequestText'),
     restartRequestMessage: document.getElementById('restartRequestMessage'),
@@ -93,9 +94,9 @@ const showNotification = (message, type = 'info') => {
         z-index: 10000;
         animation: slideInRight 0.3s ease;
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.remove();
     }, 3000);
@@ -104,16 +105,16 @@ const showNotification = (message, type = 'info') => {
 // Board creation and management
 const createBoard = () => {
     elements.gameBoard.innerHTML = '';
-    
+
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
             square.className = `board-square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
             square.dataset.row = row;
             square.dataset.col = col;
-            
+
             square.addEventListener('click', () => handleSquareClick(row, col));
-            
+
             elements.gameBoard.appendChild(square);
         }
     }
@@ -169,17 +170,17 @@ const setupPlayerDisplay = () => {
         elements.topPlayerName.textContent = 'Opponent (Blue)';
         elements.orientationText.textContent = 'Your Red pieces are at the bottom (rotated view)';
     }
-    
+
     console.log(`Player perspective: ${gameState.playerColor}, Board will be ${gameState.playerColor === 'Red' ? 'rotated 180°' : 'normal'}`);
 };
 
 const updateBoard = (board) => {
     gameState.board = board;
     const displayBoard = getRotatedBoard(board);
-    
+
     // Clear all pieces
     document.querySelectorAll('.game-piece').forEach(piece => piece.remove());
-    
+
     // Add pieces based on rotated board state
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
@@ -192,16 +193,16 @@ const updateBoard = (board) => {
                 else if (piece === 'O') pieceClass = 'blue';
                 else if (piece === 'R') pieceClass = 'red king';
                 else if (piece === 'P') pieceClass = 'blue king';
-                
+
                 pieceElement.className = `game-piece ${pieceClass}`;
                 pieceElement.dataset.row = row;
                 pieceElement.dataset.col = col;
-                
+
                 pieceElement.addEventListener('click', (e) => {
                     e.stopPropagation();
                     handlePieceClick(row, col);
                 });
-                
+
                 square.appendChild(pieceElement);
             }
         }
@@ -212,17 +213,17 @@ const handleSquareClick = (displayRow, displayCol) => {
     if (!gameState.gameStarted || gameState.playerColor !== gameState.currentPlayer) {
         return;
     }
-    
+
     const square = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
-    
+
     if (gameState.selectedSquare && square.classList.contains('valid-move')) {
         // Convert display coordinates to actual board coordinates
         const actualFrom = getActualCoordinates(gameState.selectedSquare.row, gameState.selectedSquare.col);
         const actualTo = getActualCoordinates(displayRow, displayCol);
-        
+
         // Store the move for highlighting
         gameState.lastMove = { from: actualFrom, to: actualTo };
-        
+
         if (gameState.isBot) {
             // Handle bot game locally
             executeBotGameMove(actualFrom, actualTo);
@@ -234,7 +235,7 @@ const handleSquareClick = (displayRow, displayCol) => {
                 to: actualTo
             });
         }
-        
+
         clearSelection();
     } else {
         clearSelection();
@@ -243,27 +244,27 @@ const handleSquareClick = (displayRow, displayCol) => {
 
 const handlePieceClick = (displayRow, displayCol) => {
     console.log(`Piece clicked: display(${displayRow},${displayCol}), gameStarted: ${gameState.gameStarted}, currentPlayer: ${gameState.currentPlayer}, myColor: ${gameState.playerColor}`);
-    
+
     if (!gameState.gameStarted) {
         showNotification('Game not started yet!', 'error');
         return;
     }
-    
+
     if (gameState.playerColor !== gameState.currentPlayer) {
         showNotification('Not your turn!', 'error');
         return;
     }
-    
+
     // Convert display coordinates to actual board coordinates
     const [actualRow, actualCol] = getActualCoordinates(displayRow, displayCol);
     const piece = gameState.board[actualRow][actualCol];
-    
+
     console.log(`Actual coordinates: (${actualRow},${actualCol}), piece: ${piece}`);
-    
+
     // Check if piece belongs to current player
     const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     console.log(`Player pieces: ${playerPieces}, clicked piece: ${piece}`);
-    
+
     if (playerPieces.includes(piece)) {
         clearSelection();
         selectPiece(displayRow, displayCol);
@@ -275,14 +276,14 @@ const handlePieceClick = (displayRow, displayCol) => {
 
 const selectPiece = (displayRow, displayCol) => {
     gameState.selectedSquare = { row: displayRow, col: displayCol };
-    
+
     // Highlight selected piece
     const piece = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"] .game-piece`);
     const square = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
-    
+
     if (piece) piece.classList.add('selected');
     if (square) square.classList.add('selected');
-    
+
     // Show valid moves
     showValidMoves(displayRow, displayCol);
 };
@@ -290,27 +291,27 @@ const selectPiece = (displayRow, displayCol) => {
 const showValidMoves = (displayFromRow, displayFromCol) => {
     // Convert to actual coordinates for validation
     const [actualFromRow, actualFromCol] = getActualCoordinates(displayFromRow, displayFromCol);
-    
+
     const directions = [
         [-1, 0], [1, 0], [0, -1], [0, 1] // Horizontal and vertical directions
     ];
-    
+
     directions.forEach(([dRow, dCol]) => {
         let actualToRow = actualFromRow + dRow;
         let actualToCol = actualFromCol + dCol;
-        
+
         // Check all squares in this direction until we hit a piece or board edge
         while (actualToRow >= 0 && actualToRow < 8 && actualToCol >= 0 && actualToCol < 8) {
             if (gameState.board[actualToRow][actualToCol] !== 'H') {
                 // Hit a piece - stop checking this direction
                 break;
             }
-            
+
             // This is a valid move - highlight it
             const [displayToRow, displayToCol] = getDisplayCoordinates(actualToRow, actualToCol);
             const square = document.querySelector(`[data-row="${displayToRow}"][data-col="${displayToCol}"]`);
             if (square) square.classList.add('valid-move');
-            
+
             // Continue to next square in this direction
             actualToRow += dRow;
             actualToCol += dCol;
@@ -321,29 +322,29 @@ const showValidMoves = (displayFromRow, displayFromCol) => {
 const isValidMove = (actualFromRow, actualFromCol, actualToRow, actualToCol) => {
     // Check bounds
     if (actualToRow < 0 || actualToRow >= 8 || actualToCol < 0 || actualToCol >= 8) return false;
-    
+
     // Check if destination is empty
     if (gameState.board[actualToRow][actualToCol] !== 'H') return false;
-    
+
     // Check if piece belongs to current player
     const piece = gameState.board[actualFromRow][actualFromCol];
     const playerPieces = gameState.playerColor === 'Blue' ? ['O', 'P'] : ['X', 'R'];
     if (!playerPieces.includes(piece)) return false;
-    
+
     // Must move horizontally or vertically (like a rook)
     const rowDiff = actualToRow - actualFromRow;
     const colDiff = actualToCol - actualFromCol;
-    
+
     // Must be either horizontal or vertical movement
     if (rowDiff !== 0 && colDiff !== 0) return false;
-    
+
     // Check path is clear (no pieces in between)
     const stepRow = rowDiff === 0 ? 0 : (rowDiff > 0 ? 1 : -1);
     const stepCol = colDiff === 0 ? 0 : (colDiff > 0 ? 1 : -1);
-    
+
     let currentRow = actualFromRow + stepRow;
     let currentCol = actualFromCol + stepCol;
-    
+
     while (currentRow !== actualToRow || currentCol !== actualToCol) {
         if (gameState.board[currentRow][currentCol] !== 'H') {
             return false; // Path blocked
@@ -351,22 +352,22 @@ const isValidMove = (actualFromRow, actualFromCol, actualToRow, actualToCol) => 
         currentRow += stepRow;
         currentCol += stepCol;
     }
-    
+
     return true;
 };
 
 const clearSelection = () => {
     gameState.selectedSquare = null;
-    
+
     // Remove all highlights
     document.querySelectorAll('.game-piece.selected').forEach(piece => {
         piece.classList.remove('selected');
     });
-    
+
     document.querySelectorAll('.board-square.selected').forEach(square => {
         square.classList.remove('selected');
     });
-    
+
     document.querySelectorAll('.board-square.valid-move').forEach(square => {
         square.classList.remove('valid-move');
     });
@@ -377,7 +378,7 @@ const clearMoveHighlights = () => {
     document.querySelectorAll('.board-square.last-move-from').forEach(square => {
         square.classList.remove('last-move-from');
     });
-    
+
     document.querySelectorAll('.board-square.last-move-to').forEach(square => {
         square.classList.remove('last-move-to');
     });
@@ -386,18 +387,18 @@ const clearMoveHighlights = () => {
 const highlightLastMove = (from, to) => {
     // Clear previous last move highlights
     clearMoveHighlights();
-    
+
     if (from && to) {
         // Convert actual coordinates to display coordinates for highlighting
         const [displayFromRow, displayFromCol] = getDisplayCoordinates(from[0], from[1]);
         const [displayToRow, displayToCol] = getDisplayCoordinates(to[0], to[1]);
-        
+
         // Highlight the "from" square (where piece moved from)
         const fromSquare = document.querySelector(`[data-row="${displayFromRow}"][data-col="${displayFromCol}"]`);
         if (fromSquare) {
             fromSquare.classList.add('last-move-from');
         }
-        
+
         // Highlight the "to" square (where piece moved to)
         const toSquare = document.querySelector(`[data-row="${displayToRow}"][data-col="${displayToCol}"]`);
         if (toSquare) {
@@ -408,24 +409,24 @@ const highlightLastMove = (from, to) => {
 
 const updateTurnIndicator = (currentPlayer) => {
     const isMyTurn = gameState.playerColor === currentPlayer;
-    
+
     // Update turn indicators based on perspective
     elements.bottomPlayerTurn.classList.toggle('active', isMyTurn);
     elements.topPlayerTurn.classList.toggle('active', !isMyTurn);
-    
-    elements.statusMessage.textContent = isMyTurn 
-        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!` 
+
+    elements.statusMessage.textContent = isMyTurn
+        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!`
         : `Opponent's turn (${currentPlayer}) - Waiting for opponent...`;
-    
+
     console.log(`Turn: ${currentPlayer}, My Color: ${gameState.playerColor}, My Turn: ${isMyTurn}`);
 };
 
 const showGameOverModal = (winner) => {
     elements.winnerText.textContent = `${winner} Wins!`;
-    elements.winnerMessage.textContent = winner === gameState.playerColor 
-        ? "Victory is yours! Well played!" 
+    elements.winnerMessage.textContent = winner === gameState.playerColor
+        ? "Victory is yours! Well played!"
         : "Good game! Better luck next time.";
-    
+
     elements.gameOverModal.classList.add('active');
 };
 
@@ -453,17 +454,17 @@ const displayRoomList = (rooms) => {
         elements.roomList.innerHTML = '<div class="no-rooms">No public rooms available</div>';
         return;
     }
-    
+
     elements.roomList.innerHTML = '';
-    
+
     rooms.forEach(room => {
         const roomItem = document.createElement('div');
         roomItem.className = 'room-item';
-        
+
         const isAvailable = room.playerCount < 2;
         const statusClass = isAvailable ? 'status-available' : 'status-full';
         const statusText = isAvailable ? 'Available' : 'Full';
-        
+
         roomItem.innerHTML = `
             <div class="room-info">
                 <div class="room-code">${room.id}</div>
@@ -477,7 +478,7 @@ const displayRoomList = (rooms) => {
                 ${isAvailable ? 'Join' : 'Full'}
             </button>
         `;
-        
+
         elements.roomList.appendChild(roomItem);
     });
 };
@@ -486,7 +487,7 @@ const displayRoomList = (rooms) => {
 window.joinRoomFromList = (roomId) => {
     gameState.roomId = roomId;
     elements.roomCode.textContent = `Room: ${roomId}`;
-    
+
     showScreen('loadingScreen');
     socket.emit('joinRoom', roomId);
 };
@@ -501,7 +502,7 @@ elements.confirmCreateBtn.addEventListener('click', () => {
     const roomId = generateRoomCode();
     gameState.roomId = roomId;
     elements.roomCode.textContent = `Room: ${roomId}`;
-    
+
     elements.roomSettingsModal.style.display = 'none';
     showScreen('loadingScreen');
     socket.emit('createRoom', { roomId, isPublic: roomType === 'public' });
@@ -523,34 +524,35 @@ elements.playWithBotBtn.addEventListener('click', () => {
     gameState.isBot = true;
     gameState.playerColor = 'Blue';
     gameState.playerPiece = 'O';
-    
+
     showScreen('gameScreen');
     setupPlayerDisplay();
     createBoard();
-    
+
     // Initialize bot game
     const initialBoard = [
-        ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
-        ['H','H','H','H','H','H','H','R'],  // Row 1: Red King
-        ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
-        ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
-        ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
-        ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
-        ['P','H','H','H','H','H','H','H'],  // Row 6: Blue King
-        ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'H'],  // Row 0: Red pieces at top
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'R'],  // Row 1: Red King
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
+        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
+        ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
+        ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
     ];
-    
+
     gameState.gameStarted = true;
     gameState.currentPlayer = 'Blue';
     updateBoard(initialBoard);
     updateTurnIndicator('Blue');
-    
+
     elements.roomCode.textContent = 'Room: Bot Game';
     elements.copyRoomBtn.style.display = 'none';
     elements.waitingControls.style.display = 'none';
     elements.gameStartControls.style.display = 'none';
     elements.gameplayControls.style.display = 'block';
-    
+    elements.exitBotGameBtn.style.display = 'inline-block';
+
     showNotification('Bot game started! You play as Blue.', 'info');
 });
 
@@ -560,10 +562,10 @@ elements.joinRoomBtn.addEventListener('click', () => {
         showNotification('Please enter a room code', 'error');
         return;
     }
-    
+
     gameState.roomId = roomId;
     elements.roomCode.textContent = `Room: ${roomId}`;
-    
+
     showScreen('loadingScreen');
     socket.emit('joinRoom', roomId);
 });
@@ -589,7 +591,7 @@ elements.playAgainBtn.addEventListener('click', () => {
             roomId: gameState.roomId,
             choice: 'playAgain'
         });
-        
+
         elements.playAgainBtn.disabled = true;
         elements.playAgainBtn.textContent = 'Waiting...';
     }
@@ -688,6 +690,23 @@ elements.declineRestartBtn.addEventListener('click', () => {
     hideRestartRequestModal();
 });
 
+elements.exitBotGameBtn.addEventListener('click', () => {
+    // Exit bot game and return to main menu
+    showScreen('mainMenu');
+    gameState = {
+        roomId: null,
+        playerColor: null,
+        playerPiece: null,
+        currentPlayer: 'Blue',
+        board: [],
+        selectedSquare: null,
+        gameStarted: false,
+        lastMove: null,
+        isBot: false
+    };
+    showNotification('Returned to main menu', 'info');
+});
+
 const sendMessage = () => {
     const message = elements.messageInput.value.trim();
     if (message && gameState.roomId) {
@@ -703,7 +722,7 @@ const addChatMessage = (player, message) => {
     const messageElement = document.createElement('div');
     messageElement.className = `chat-message ${player.toLowerCase()}`;
     messageElement.textContent = `${player}: ${message}`;
-    
+
     elements.chatMessages.appendChild(messageElement);
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 };
@@ -713,7 +732,7 @@ const botAI = {
     // Evaluate board position for the bot (Red player)
     evaluateBoard: (board) => {
         let score = 0;
-        
+
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = board[row][col];
@@ -730,15 +749,15 @@ const botAI = {
                 }
             }
         }
-        
+
         return score;
     },
-    
+
     // Get all possible moves for a color
     getPossibleMoves: (board, color) => {
         const moves = [];
         const pieces = color === 'Red' ? ['X', 'R'] : ['O', 'P'];
-        
+
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 if (pieces.includes(board[row][col])) {
@@ -753,58 +772,58 @@ const botAI = {
                 }
             }
         }
-        
+
         return moves;
     },
-    
+
     // Get valid moves for a specific piece
     getPieceValidMoves: (board, fromRow, fromCol) => {
         const moves = [];
         const directions = [
             [-1, 0], [1, 0], [0, -1], [0, 1] // Horizontal and vertical directions
         ];
-        
+
         directions.forEach(([dRow, dCol]) => {
             let toRow = fromRow + dRow;
             let toCol = fromCol + dCol;
-            
+
             // Check all squares in this direction until we hit a piece or board edge
             while (toRow >= 0 && toRow < 8 && toCol >= 0 && toCol < 8) {
                 if (board[toRow][toCol] !== 'H') {
                     // Hit a piece - stop checking this direction
                     break;
                 }
-                
+
                 moves.push([toRow, toCol]);
-                
+
                 // Continue to next square in this direction
                 toRow += dRow;
                 toCol += dCol;
             }
         });
-        
+
         return moves;
     },
-    
+
     // Simulate a move and return the resulting board
     simulateMove: (board, from, to) => {
         const newBoard = board.map(row => [...row]);
         const piece = newBoard[from[0]][from[1]];
         const currentPlayer = ['X', 'R'].includes(piece) ? 'Red' : 'Blue';
-        
+
         // Move the piece
         newBoard[from[0]][from[1]] = 'H';
         newBoard[to[0]][to[1]] = piece;
-        
+
         // Apply capture rules using the same logic as server
         botAI.checkRekCaptures(newBoard, to[0], to[1], currentPlayer);
         botAI.checkTrappingCaptures(newBoard, currentPlayer);
-        
+
         return newBoard;
     },
-    
 
-    
+
+
     // Check for Rek captures (sandwich capture) - same as server
     checkRekCaptures: (board, toRow, toCol, currentPlayer) => {
         const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
@@ -841,7 +860,7 @@ const botAI = {
             }
         });
     },
-    
+
     // Check for group trapping captures - same as server
     checkTrappingCaptures: (board, currentPlayer) => {
         const opponentPlayer = currentPlayer === 'Blue' ? 'Red' : 'Blue';
@@ -873,7 +892,7 @@ const botAI = {
             }
         }
     },
-    
+
     // Find connected group of pieces - same as server
     findConnectedGroup: (board, startRow, startCol, pieceTypes, visited, group) => {
         const stack = [[startRow, startCol]];
@@ -896,7 +915,7 @@ const botAI = {
             stack.push([row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]);
         }
     },
-    
+
     // Check if a piece has any legal moves - same as server
     pieceHasLegalMoves: (board, row, col, player) => {
         // Check all four directions (orthogonal movement like a rook)
@@ -925,20 +944,20 @@ const botAI = {
 
         return false; // No legal moves found
     },
-    
+
     // Minimax algorithm with alpha-beta pruning
     minimax: (board, depth, isMaximizing, alpha, beta) => {
         if (depth === 0) {
             return botAI.evaluateBoard(board);
         }
-        
+
         const color = isMaximizing ? 'Red' : 'Blue';
         const moves = botAI.getPossibleMoves(board, color);
-        
+
         if (moves.length === 0) {
             return isMaximizing ? -10000 : 10000;
         }
-        
+
         if (isMaximizing) {
             let maxEval = -Infinity;
             for (const move of moves) {
@@ -961,7 +980,7 @@ const botAI = {
             return minEval;
         }
     },
-    
+
     // Check for winner in Rek game (same as server)
     checkWinner: (board) => {
         let redKing = false;
@@ -979,25 +998,25 @@ const botAI = {
         if (!blueKing) return 'Red';
         return null;
     },
-    
+
     // Get the best move for the bot
     getBestMove: (board) => {
         const moves = botAI.getPossibleMoves(board, 'Red');
         if (moves.length === 0) return null;
-        
+
         let bestMove = null;
         let bestScore = -Infinity;
-        
+
         for (const move of moves) {
             const newBoard = botAI.simulateMove(board, move.from, move.to);
             const score = botAI.minimax(newBoard, 3, false, -Infinity, Infinity); // Depth 3 for hard difficulty
-            
+
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
             }
         }
-        
+
         return bestMove;
     }
 };
@@ -1007,15 +1026,15 @@ const executeBotGameMove = (from, to) => {
     // Create new board and apply the player's move
     const newBoard = gameState.board.map(row => [...row]);
     const piece = newBoard[from[0]][from[1]];
-    
+
     // Move the piece
     newBoard[from[0]][from[1]] = 'H';
     newBoard[to[0]][to[1]] = piece;
-    
+
     // Apply capture rules using the same logic as server
     botAI.checkRekCaptures(newBoard, to[0], to[1], 'Blue');
     botAI.checkTrappingCaptures(newBoard, 'Blue');
-    
+
     // Check for win condition (king capture)
     const winner = botAI.checkWinner(newBoard);
     if (winner) {
@@ -1026,14 +1045,14 @@ const executeBotGameMove = (from, to) => {
         showGameOverModal(winner);
         return;
     }
-    
+
     // Switch to bot's turn
     gameState.currentPlayer = 'Red';
     updateBoard(newBoard);
     updateTurnIndicator('Red');
     highlightLastMove(from, to);
     clearSelection();
-    
+
     // Trigger bot move
     executeBotMove();
 };
@@ -1043,26 +1062,26 @@ const executeBotMove = () => {
     if (!gameState.isBot || gameState.currentPlayer !== 'Red' || !gameState.gameStarted) {
         return;
     }
-    
+
     setTimeout(() => {
         const bestMove = botAI.getBestMove(gameState.board);
-        
+
         if (bestMove) {
             // Highlight the bot's move
             gameState.lastMove = { from: bestMove.from, to: bestMove.to };
-            
+
             // Create new board and apply the bot's move
             const newBoard = gameState.board.map(row => [...row]);
             const piece = newBoard[bestMove.from[0]][bestMove.from[1]];
-            
+
             // Move the piece
             newBoard[bestMove.from[0]][bestMove.from[1]] = 'H';
             newBoard[bestMove.to[0]][bestMove.to[1]] = piece;
-            
+
             // Apply capture rules using the same logic as server
             botAI.checkRekCaptures(newBoard, bestMove.to[0], bestMove.to[1], 'Red');
             botAI.checkTrappingCaptures(newBoard, 'Red');
-            
+
             // Check for win condition (king capture)
             const winner = botAI.checkWinner(newBoard);
             if (winner) {
@@ -1073,13 +1092,13 @@ const executeBotMove = () => {
                 showGameOverModal(winner);
                 return;
             }
-            
+
             // Continue game
             gameState.currentPlayer = 'Blue';
             updateBoard(newBoard);
             updateTurnIndicator('Blue');
             highlightLastMove(bestMove.from, bestMove.to);
-            
+
             showNotification('Bot made its move!', 'info');
         }
     }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds for realism
@@ -1088,28 +1107,28 @@ const executeBotMove = () => {
 // Restart bot game
 const restartBotGame = () => {
     const initialBoard = [
-        ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
-        ['H','H','H','H','H','H','H','R'],  // Row 1: Red King
-        ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
-        ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
-        ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
-        ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
-        ['P','H','H','H','H','H','H','H'],  // Row 6: Blue King
-        ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'H'],  // Row 0: Red pieces at top
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'R'],  // Row 1: Red King
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
+        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
+        ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
+        ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
     ];
-    
+
     gameState.gameStarted = true;
     gameState.currentPlayer = 'Blue';
     gameState.lastMove = null;
-    
+
     updateBoard(initialBoard);
     updateTurnIndicator('Blue');
     clearSelection();
     clearMoveHighlights();
-    
+
     elements.requestRestartBtn.disabled = false;
     elements.requestRestartBtn.textContent = '🔄 Request Restart';
-    
+
     showNotification('Bot game restarted!', 'info');
 };
 
@@ -1117,29 +1136,29 @@ const restartBotGame = () => {
 socket.on('playerAssigned', ({ color, piece }) => {
     gameState.playerColor = color;
     gameState.playerPiece = piece;
-    
+
     showNotification(`You are the ${color} Player`, 'info');
-    
+
     // Setup player display based on perspective
     setupPlayerDisplay();
-    
+
     // Show game screen immediately but with waiting message
     showScreen('gameScreen');
     createBoard();
-    
+
     // Show initial board setup for Rek game
     const initialBoard = [
-        ['H','X','X','X','X','X','X','X'],  // Row 0: Red pieces at top
-        ['H','H','H','H','H','H','H','R'],  // Row 1: Red King
-        ['X','X','X','X','X','X','X','X'],  // Row 2: Red pieces
-        ['H','H','H','H','H','H','H','H'],  // Row 3: Empty
-        ['H','H','H','H','H','H','H','H'],  // Row 4: Empty
-        ['O','O','O','O','O','O','O','O'],  // Row 5: Blue pieces
-        ['P','H','H','H','H','H','H','H'],  // Row 6: Blue King
-        ['O','O','O','O','O','O','O','H']   // Row 7: Blue pieces at bottom
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'H'],  // Row 0: Red pieces at top
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'R'],  // Row 1: Red King
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
+        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
+        ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
+        ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
     ];
     updateBoard(initialBoard);
-    
+
     if (color === 'Blue') {
         elements.statusMessage.textContent = `Share room code "${gameState.roomId}" with a friend to start playing!`;
         showNotification(`Room created! Share code: ${gameState.roomId}`, 'info');
@@ -1163,7 +1182,7 @@ socket.on('gameStartCountdown', ({ count }) => {
     elements.gameStartControls.style.display = 'none';
     elements.gameStartCountdown.style.display = 'block';
     elements.countdownNumber.textContent = count;
-    
+
     if (count === 0) {
         elements.gameStartCountdown.style.display = 'none';
     }
@@ -1173,21 +1192,22 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
     gameState.gameStarted = true;
     gameState.currentPlayer = currentPlayer;
     gameState.lastMove = null;
-    
+
     showScreen('gameScreen');
     createBoard();
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     clearMoveHighlights();
-    
+
     // Hide all start game UI elements and show gameplay controls
     elements.copyRoomBtn.style.display = 'none';
     elements.gameStartControls.style.display = 'none';
     elements.gameStartCountdown.style.display = 'none';
     elements.gameplayControls.style.display = 'block';
-    
+    elements.exitBotGameBtn.style.display = 'none'; // Hide bot exit button for multiplayer
+
     showNotification(`The game begins! ${currentPlayer} moves first.`, 'info');
-    
+
     // Optional: Start background music
     // elements.bgMusic.play().catch(() => {}); // Ignore autoplay restrictions
 });
@@ -1198,7 +1218,7 @@ socket.on('updateBoard', ({ board, currentPlayer, lastMove }) => {
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     clearSelection();
-    
+
     // Highlight the last move
     if (lastMove) {
         highlightLastMove(lastMove.from, lastMove.to);
@@ -1209,15 +1229,15 @@ socket.on('gameOver', ({ winner, board, lastMove }) => {
     gameState.gameStarted = false;
     gameState.lastMove = lastMove;
     updateBoard(board);
-    
+
     // Hide gameplay controls when game is over
     elements.gameplayControls.style.display = 'none';
-    
+
     // Highlight the winning move
     if (lastMove) {
         highlightLastMove(lastMove.from, lastMove.to);
     }
-    
+
     showGameOverModal(winner);
 });
 
@@ -1225,23 +1245,30 @@ socket.on('restartGame', ({ board, currentPlayer }) => {
     gameState.gameStarted = true;
     gameState.currentPlayer = currentPlayer;
     gameState.lastMove = null;
-    
+
     hideGameOverModal();
     hideRestartRequestModal();
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
     clearSelection();
     clearMoveHighlights();
-    
+
     // Reset button states
     elements.playAgainBtn.disabled = false;
     elements.playAgainBtn.textContent = '⚔️ Battle Again';
     elements.requestRestartBtn.disabled = false;
     elements.requestRestartBtn.textContent = '🔄 Request Restart';
-    
+
     // Show gameplay controls again
     elements.gameplayControls.style.display = 'block';
     
+    // Show/hide bot exit button based on game type
+    if (gameState.isBot) {
+        elements.exitBotGameBtn.style.display = 'inline-block';
+    } else {
+        elements.exitBotGameBtn.style.display = 'none';
+    }
+
     showNotification('A new battle begins!', 'info');
 });
 
@@ -1259,7 +1286,7 @@ socket.on('endSession', () => {
         lastMove: null,
         isBot: false
     };
-    
+
     elements.roomInput.value = '';
     showNotification('Returning to main menu...', 'info');
 });
@@ -1330,7 +1357,7 @@ socket.on('exitedLobby', () => {
         lastMove: null,
         isBot: false
     };
-    
+
     elements.roomInput.value = '';
     showNotification('Left the lobby', 'info');
 });
@@ -1338,12 +1365,12 @@ socket.on('exitedLobby', () => {
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
     showScreen('mainMenu');
-    
+
     // Load room list when page loads
     setTimeout(() => {
         refreshRoomList();
     }, 1000);
-    
+
     // Add some dynamic particles
     const particles = document.querySelector('.particles');
     for (let i = 0; i < 5; i++) {

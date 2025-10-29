@@ -1603,4 +1603,36 @@ ick Actions */
     .btn-icon {
         font-size: 1.5rem;
     }
+}/* Bot Exi
+t Button */
+#exitBotGameBtn {
+    background: linear-gradient(145deg, #ff9500, #e67e00);
+    color: white;
+    margin-left: 1rem;
+}
+
+#exitBotGameBtn:hover {
+    background: linear-gradient(145deg, #ffb84d, #ff9500);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.4);
+}
+
+/* Gameplay Controls Layout */
+.gameplay-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.gameplay-controls button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
 }
