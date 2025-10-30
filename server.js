@@ -264,6 +264,7 @@ io.on('connection', (socket) => {
 
     // Create room
     socket.on('createRoom', ({ roomId, isPublic }) => {
+        console.log('🏠 Creating room:', roomId, 'Public:', isPublic, 'Socket:', socket.id);
         socket.join(roomId);
 
         if (!rooms.has(roomId)) {

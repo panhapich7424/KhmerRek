@@ -1,6 +1,23 @@
 // Socket connection
 const socket = io();
 
+// Debug socket connection
+socket.on('connect', () => {
+    console.log('✅ Connected to server:', socket.id);
+});
+
+socket.on('disconnect', () => {
+    console.log('❌ Disconnected from server');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('❌ Connection error:', error);
+});
+
+socket.on('error', (error) => {
+    console.error('❌ Socket error:', error);
+});
+
 // Game state
 let gameState = {
     roomId: null,
@@ -768,6 +785,8 @@ elements.confirmCreateBtn.addEventListener('click', () => {
     gameState.roomId = roomId;
     elements.roomCode.textContent = `Room: ${roomId}`;
 
+    console.log('🏠 Creating room:', roomId, 'Type:', roomType, 'Socket connected:', socket.connected);
+    
     elements.roomSettingsModal.style.display = 'none';
     showScreen('loadingScreen');
     socket.emit('createRoom', { roomId, isPublic: roomType === 'public' });
