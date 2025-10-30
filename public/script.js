@@ -170,40 +170,38 @@ const screens = {
 };
 
 const elements = {
+    // Main menu elements
     roomInput: document.getElementById('roomInput'),
-    joinRoomBtn: document.getElementById('joinRoomBtn'),
     createRoomBtn: document.getElementById('createRoomBtn'),
+    joinRoomBtn: document.getElementById('joinRoomBtn'),
+    publicRoomsBtn: document.getElementById('publicRoomsBtn'),
+    playWithBotBtn: document.getElementById('playWithBotBtn'),
+    
+    // Modal elements
+    roomSettingsModal: document.getElementById('roomSettingsModal'),
     confirmCreateBtn: document.getElementById('confirmCreateBtn'),
     closeSettingsModal: document.getElementById('closeSettingsModal'),
-    roomSettingsModal: document.getElementById('roomSettingsModal'),
     joinRoomModal: document.getElementById('joinRoomModal'),
     closeJoinModal: document.getElementById('closeJoinModal'),
     confirmJoinBtn: document.getElementById('confirmJoinBtn'),
     publicRoomsModal: document.getElementById('publicRoomsModal'),
     closePublicModal: document.getElementById('closePublicModal'),
-    publicRoomsBtn: document.getElementById('publicRoomsBtn'),
-    playWithBotBtn: document.getElementById('playWithBotBtn'),
-    refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
-    roomList: document.getElementById('roomList'),
+    
+    // Game elements
     gameBoard: document.getElementById('gameBoard'),
     roomCode: document.getElementById('roomCode'),
     copyRoomBtn: document.getElementById('copyRoomBtn'),
     statusMessage: document.getElementById('statusMessage'),
+    
+    // Player info elements
     topPlayerPiece: document.getElementById('topPlayerPiece'),
     topPlayerName: document.getElementById('topPlayerName'),
     topPlayerTurn: document.getElementById('topPlayerTurn'),
     bottomPlayerPiece: document.getElementById('bottomPlayerPiece'),
     bottomPlayerName: document.getElementById('bottomPlayerName'),
     bottomPlayerTurn: document.getElementById('bottomPlayerTurn'),
-    gameOverModal: document.getElementById('gameOverModal'),
-    winnerText: document.getElementById('winnerText'),
-    winnerMessage: document.getElementById('winnerMessage'),
-    playAgainBtn: document.getElementById('playAgainBtn'),
-    exitGameBtn: document.getElementById('exitGameBtn'),
-    bgMusic: document.getElementById('bgMusic'),
-    chatBtn: document.getElementById('chatBtn'),
-    emoteMenu: document.getElementById('emoteMenu'),
-    closeEmoteMenu: document.getElementById('closeEmoteMenu'),
+    
+    // Game controls
     waitingControls: document.getElementById('waitingControls'),
     exitRoomBtn: document.getElementById('exitRoomBtn'),
     gameStartControls: document.getElementById('gameStartControls'),
@@ -215,14 +213,22 @@ const elements = {
     gameplayControls: document.getElementById('gameplayControls'),
     requestRestartBtn: document.getElementById('requestRestartBtn'),
     exitBotGameBtn: document.getElementById('exitBotGameBtn'),
-    turnTimer: document.getElementById('turnTimer'),
-    timerMinutes: document.getElementById('timerMinutes'),
-    timerSeconds: document.getElementById('timerSeconds'),
-    restartRequestModal: document.getElementById('restartRequestModal'),
-    restartRequestText: document.getElementById('restartRequestText'),
-    restartRequestMessage: document.getElementById('restartRequestMessage'),
-    acceptRestartBtn: document.getElementById('acceptRestartBtn'),
-    declineRestartBtn: document.getElementById('declineRestartBtn')
+    
+    // Modals
+    gameOverModal: document.getElementById('gameOverModal'),
+    winnerText: document.getElementById('winnerText'),
+    winnerMessage: document.getElementById('winnerMessage'),
+    playAgainBtn: document.getElementById('playAgainBtn'),
+    exitGameBtn: document.getElementById('exitGameBtn'),
+    
+    // Room list
+    refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
+    roomList: document.getElementById('roomList'),
+    
+    // Emote system
+    chatBtn: document.getElementById('chatBtn'),
+    emoteMenu: document.getElementById('emoteMenu'),
+    closeEmoteMenu: document.getElementById('closeEmoteMenu')
 };
 
 // Utility functions
@@ -1709,7 +1715,6 @@ socket.on('roomNotFound', () => {
 
 socket.on('playerDisconnected', () => {
     gameState.gameStarted = false;
-    stopTurnTimer();
     elements.statusMessage.textContent = 'Your opponent has left the room. Waiting for reconnection...';
     showNotification('Opponent disconnected', 'error');
 });
@@ -1718,9 +1723,7 @@ socket.on('connect', () => {
     console.log('Connected to game server');
 });
 
-socket.on('newMessage', ({ player, message }) => {
-    addChatMessage(player, message);
-});
+// Removed old chat message handler
 
 socket.on('roomList', (rooms) => {
     displayRoomList(rooms);
@@ -1736,7 +1739,6 @@ socket.on('disconnect', () => {
 });
 
 socket.on('restartRequested', ({ requesterName }) => {
-    showRestartRequestModal(requesterName);
     showNotification(`${requesterName} requested a restart`, 'info');
 });
 
@@ -1747,12 +1749,10 @@ socket.on('restartRequestDeclined', ({ declinerName }) => {
 });
 
 socket.on('restartRequestAccepted', () => {
-    hideRestartRequestModal();
     showNotification('Restart request accepted! Starting new game...', 'info');
 });
 
 socket.on('exitedLobby', () => {
-    stopTurnTimer();
     showScreen('mainMenu');
     gameState = {
         roomId: null,
@@ -1763,9 +1763,7 @@ socket.on('exitedLobby', () => {
         selectedSquare: null,
         gameStarted: false,
         lastMove: null,
-        isBot: false,
-        turnTimeLeft: 60,
-        timerInterval: null
+        isBot: false
     };
 
     elements.roomInput.value = '';
