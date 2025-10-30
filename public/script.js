@@ -242,10 +242,10 @@ const elements = {
     refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
     roomList: document.getElementById('roomList'),
     
-    // Emote system
-    chatBtn: document.getElementById('chatBtn'),
-    emoteMenu: document.getElementById('emoteMenu'),
-    closeEmoteMenu: document.getElementById('closeEmoteMenu')
+    // Chat system
+    chatMessages: document.getElementById('chatMessages'),
+    messageInput: document.getElementById('messageInput'),
+    sendMessageBtn: document.getElementById('sendMessageBtn')
 };
 
 // Utility functions
@@ -1067,113 +1067,48 @@ elements.exitBotGameBtn.addEventListener('click', () => {
     showNotification('Returned to main menu', 'info');
 });
 
-// King Emote System
-const sendEmote = (type, content) => {
-    if (!gameState.roomId || gameState.isBot || !gameState.gameStarted) return;
-    
-    SoundManager.play('notification');
-    
-    socket.emit('sendEmote', {
-        roomId: gameState.roomId,
-        type: type, // 'emoji' or 'text'
-        content: content,
-        player: gameState.playerColor
-    });
-    
-    // Show emote on own king
-    showKingEmote(gameState.playerColor, content);
-    
-    // Close emote menu
-    elements.emoteMenu.style.display = 'none';
-};
-
-const showKingEmote = (playerColor, content) => {
-    // Find the king piece for the specified player
-    const kingPiece = playerColor === 'Blue' ? 'P' : 'R';
-    let kingPosition = null;
-    
-    // Search for the king on the board
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-            if (gameState.board[row][col] === kingPiece) {
-                kingPosition = [row, col];
-                break;
-            }
-        }
-        if (kingPosition) break;
+// Chat System
+const sendMessage = () => {
+    const message = elements.messageInput.value.trim();
+    if (message && gameState.roomId && !gameState.isBot) {
+        SoundManager.play('notification');
+        socket.emit('sendMessage', {
+            roomId: gameState.roomId,
+            message: message
+        });
+        elements.messageInput.value = '';
     }
-    
-    if (!kingPosition) return; // King not found
-    
-    // Convert to display coordinates
-    const [displayRow, displayCol] = getDisplayCoordinates(kingPosition[0], kingPosition[1]);
-    
-    // Find the king square element
-    const kingSquare = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
-    if (!kingSquare) return;
-    
-    // Create emote element
-    const emoteElement = document.createElement('div');
-    emoteElement.className = 'king-emote';
-    emoteElement.textContent = content;
-    
-    // Position the emote above the king
-    const rect = kingSquare.getBoundingClientRect();
-    const boardRect = elements.gameBoard.getBoundingClientRect();
-    
-    emoteElement.style.left = (rect.left - boardRect.left + rect.width / 2) + 'px';
-    emoteElement.style.top = (rect.top - boardRect.top - 10) + 'px';
-    emoteElement.style.transform = 'translateX(-50%)';
-    
-    // Add to game board
-    elements.gameBoard.appendChild(emoteElement);
-    
-    // Remove after animation completes
-    setTimeout(() => {
-        if (emoteElement.parentNode) {
-            emoteElement.remove();
-        }
-    }, 1500);
 };
 
-// Initialize emote system
-const initializeEmotes = () => {
-    // Chat button
-    elements.chatBtn.addEventListener('click', () => {
-        if (!gameState.gameStarted || gameState.isBot) {
-            showNotification('Emotes only available during multiplayer games!', 'error');
+const addChatMessage = (player, message) => {
+    const messageElement = document.createElement('div');
+    messageElement.className = `chat-message ${player.toLowerCase()}`;
+    messageElement.textContent = `${player}: ${message}`;
+    
+    elements.chatMessages.appendChild(messageElement);
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+};
+
+// Initialize chat system
+const initializeChat = () => {
+    // Send message button
+    elements.sendMessageBtn.addEventListener('click', () => {
+        if (gameState.isBot) {
+            showNotification('Chat only available in multiplayer games!', 'error');
             return;
         }
-        SoundManager.play('click');
-        elements.emoteMenu.style.display = 'flex';
+        sendMessage();
     });
     
-    // Close emote menu
-    elements.closeEmoteMenu.addEventListener('click', () => {
-        SoundManager.play('click');
-        elements.emoteMenu.style.display = 'none';
-    });
-    
-    // Close on backdrop click
-    elements.emoteMenu.addEventListener('click', (e) => {
-        if (e.target === elements.emoteMenu || e.target.classList.contains('emote-menu-backdrop')) {
-            elements.emoteMenu.style.display = 'none';
+    // Enter key to send message
+    elements.messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            if (gameState.isBot) {
+                showNotification('Chat only available in multiplayer games!', 'error');
+                return;
+            }
+            sendMessage();
         }
-    });
-    
-    // Emote options
-    document.querySelectorAll('.emote-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const type = btn.dataset.type;
-            const content = btn.dataset.content;
-            sendEmote(type, content);
-            
-            // Visual feedback
-            btn.style.transform = 'scale(1.1)';
-            setTimeout(() => {
-                btn.style.transform = '';
-            }, 200);
-        });
     });
 };
 
@@ -1886,9 +1821,9 @@ socket.on('exitedLobby', () => {
     showNotification('Left the lobby', 'info');
 });
 
-// Socket event for emotes
-socket.on('newEmote', ({ player, type, content }) => {
-    showKingEmote(player, content);
+// Socket event for chat messages
+socket.on('newMessage', ({ player, message }) => {
+    addChatMessage(player, message);
 });
 
 // Initialize the game
@@ -1896,8 +1831,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize sound system
     SoundManager.init();
     
-    // Initialize emote system
-    initializeEmotes();
+    // Initialize chat system
+    initializeChat();
     
     showScreen('mainMenu');
 

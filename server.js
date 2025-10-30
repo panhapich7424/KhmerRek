@@ -383,21 +383,22 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle king emotes
-    socket.on('sendEmote', ({ roomId, type, content, player }) => {
+    // Handle chat messages
+    socket.on('sendMessage', ({ roomId, message }) => {
         const room = rooms.get(roomId);
-        if (!room || !room.gameStarted) return;
+        if (!room) return;
 
-        const playerObj = room.players.find(p => p.id === socket.id);
-        if (!playerObj) return;
+        const player = room.players.find(p => p.id === socket.id);
+        if (!player) return;
 
-        // Broadcast emote to opponent only
-        socket.to(roomId).emit('newEmote', {
-            player: playerObj.color,
-            type: type,
-            content: content,
+        const chatMessage = {
+            player: player.color,
+            message: message,
             timestamp: Date.now()
-        });
+        };
+
+        // Broadcast message to all players in the room
+        io.to(roomId).emit('newMessage', chatMessage);
     });
 
     // Handle player ready

@@ -195,49 +195,17 @@
             </div>
         </div>
 
-        <!-- Chat Button -->
-        <div class="chat-button-container">
-            <button id="chatBtn" class="chat-btn" title="Open Emotes">
-                <span class="chat-icon">💬</span>
-            </button>
-        </div>
-
-        <!-- Emote Menu Modal -->
-        <div id="emoteMenu" class="emote-menu" style="display: none;">
-            <div class="emote-menu-backdrop"></div>
-            <div class="emote-menu-panel">
-                <div class="emote-menu-header">
-                    <h3>Choose Emote</h3>
-                    <button id="closeEmoteMenu" class="close-emote-btn">✕</button>
-                </div>
-                
-                <div class="emote-menu-content">
-                    <!-- Emoji Section -->
-                    <div class="emote-section">
-                        <h4>Emojis</h4>
-                        <div class="emote-grid">
-                            <button class="emote-option" data-type="emoji" data-content="😂">😂</button>
-                            <button class="emote-option" data-type="emoji" data-content="😎">😎</button>
-                            <button class="emote-option" data-type="emoji" data-content="🤔">🤔</button>
-                            <button class="emote-option" data-type="emoji" data-content="😤">😤</button>
-                            <button class="emote-option" data-type="emoji" data-content="👍">👍</button>
-                            <button class="emote-option" data-type="emoji" data-content="👎">👎</button>
-                            <button class="emote-option" data-type="emoji" data-content="🔥">🔥</button>
-                            <button class="emote-option" data-type="emoji" data-content="💯">💯</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Text Section -->
-                    <div class="emote-section">
-                        <h4>Quick Text</h4>
-                        <div class="text-options">
-                            <button class="emote-option text-option" data-type="text" data-content="HAHA!">HAHA!</button>
-                            <button class="emote-option text-option" data-type="text" data-content="ចុះចាញ់ទៅ">ចុះចាញ់ទៅ</button>
-                            <button class="emote-option text-option" data-type="text" data-content="ចង់មិច?">ចង់មិច?</button>
-                            <button class="emote-option text-option" data-type="text" data-content="លេងខូចម៉េស?">លេងខូចម៉េស?</button>
-                        </div>
-                    </div>
-                </div>
+        <!-- Chat Box -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <h3>Room Chat</h3>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type your message..." maxlength="100">
+                <button id="sendMessageBtn">Send</button>
             </div>
         </div>
     </div>
