@@ -755,11 +755,6 @@ window.joinRoomFromList = (roomId) => {
     socket.emit('joinRoom', roomId);
 };
 
-// Event listeners
-elements.createRoomBtn.addEventListener('click', () => {
-    elements.roomSettingsModal.style.display = 'flex';
-});
-
 // Create Room Modal
 elements.createRoomBtn.addEventListener('click', () => {
     SoundManager.play('click');
@@ -879,6 +874,51 @@ elements.playWithBotBtn.addEventListener('click', () => {
 
 elements.refreshRoomsBtn.addEventListener('click', () => {
     refreshRoomList();
+});
+
+elements.startGameBtn.addEventListener('click', () => {
+    socket.emit('playerReady', { roomId: gameState.roomId });
+    elements.startGameBtn.disabled = true;
+    elements.startGameBtn.textContent = '✅ Ready';
+    showNotification('Waiting for opponent to be ready...', 'info');
+});
+
+elements.exitRoomBtn.addEventListener('click', () => {
+    socket.emit('exitLobby', { roomId: gameState.roomId });
+});
+
+elements.exitLobbyBtn.addEventListener('click', () => {
+    socket.emit('exitLobby', { roomId: gameState.roomId });
+});
+
+elements.requestRestartBtn.addEventListener('click', () => {
+    if (gameState.isBot) {
+        // Restart bot game immediately
+        restartBotGame();
+    } else {
+        // Request restart from opponent
+        socket.emit('requestRestart', { roomId: gameState.roomId });
+        elements.requestRestartBtn.disabled = true;
+        elements.requestRestartBtn.textContent = '⏳ Requesting...';
+        showNotification('Restart request sent to opponent', 'info');
+    }
+});
+
+elements.exitBotGameBtn.addEventListener('click', () => {
+    // Exit bot game and return to main menu
+    showScreen('mainMenu');
+    gameState = {
+        roomId: null,
+        playerColor: null,
+        playerPiece: null,
+        currentPlayer: 'Blue',
+        board: [],
+        selectedSquare: null,
+        gameStarted: false,
+        lastMove: null,
+        isBot: false
+    };
+    showNotification('Returned to main menu', 'info');
 });
 
 elements.playAgainBtn.addEventListener('click', () => {
@@ -1584,6 +1624,63 @@ socket.on('gameStartCountdown', ({ count }) => {
     elements.gameStartCountdown.style.display = 'block';
     elements.countdownNumber.textContent = count;
 
+    if (count === 0) {
+        elements.gameStartCountdown.style.display = 'none';
+    }
+});
+
+// Socket event listeners
+socket.on('playerAssigned', ({ color, piece }) => {
+    gameState.playerColor = color;
+    gameState.playerPiece = piece;
+
+    showNotification(`You are the ${color} Player`, 'info');
+
+    // Setup player display based on perspective
+    setupPlayerDisplay();
+
+    // Show game screen immediately but with waiting message
+    showScreen('gameScreen');
+    createBoard();
+
+    // Show initial board setup for Rek game
+    const initialBoard = [
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'H'],  // Row 0: Red pieces at top
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'R'],  // Row 1: Red King
+        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
+        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
+        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
+        ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
+        ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
+    ];
+    updateBoard(initialBoard);
+
+    if (color === 'Blue') {
+        elements.statusMessage.textContent = `Share room code "${gameState.roomId}" with a friend to start playing!`;
+        showNotification(`Room created! Share code: ${gameState.roomId}`, 'info');
+        elements.copyRoomBtn.style.display = 'block';
+        elements.waitingControls.style.display = 'block';
+    } else {
+        elements.statusMessage.textContent = `Joined room ${gameState.roomId}. Waiting for game to start...`;
+        elements.waitingControls.style.display = 'block';
+    }
+});
+
+socket.on('bothPlayersJoined', () => {
+    SoundManager.play('join');
+    elements.statusMessage.textContent = 'Both players connected! Click "Start Game" when ready.';
+    elements.waitingControls.style.display = 'none';
+    elements.gameStartControls.style.display = 'block';
+    elements.copyRoomBtn.style.display = 'none';
+    showNotification('Opponent joined! Get ready to play!', 'info');
+});
+
+socket.on('gameStartCountdown', ({ count }) => {
+    elements.gameStartControls.style.display = 'none';
+    elements.gameStartCountdown.style.display = 'block';
+    elements.countdownNumber.textContent = count;
+    
     if (count === 0) {
         elements.gameStartCountdown.style.display = 'none';
     }
