@@ -201,35 +201,49 @@
             </div>
         </div>
 
-        <!-- Emoji Reactions & Quick Text -->
-        <div class="reactions-container">
-            <div class="reactions-header">
-                <h3>Quick Reactions</h3>
-            </div>
-            
-            <!-- Emoji Reactions -->
-            <div class="emoji-reactions">
-                <button class="emoji-btn" data-emoji="😂" title="Laugh">😂</button>
-                <button class="emoji-btn" data-emoji="😎" title="Cool">😎</button>
-                <button class="emoji-btn" data-emoji="🤔" title="Think">🤔</button>
-                <button class="emoji-btn" data-emoji="😤" title="Angry">😤</button>
-                <button class="emoji-btn" data-emoji="👍" title="Good">👍</button>
-                <button class="emoji-btn" data-emoji="👎" title="Bad">👎</button>
-                <button class="emoji-btn" data-emoji="🔥" title="Fire">🔥</button>
-                <button class="emoji-btn" data-emoji="💯" title="Perfect">💯</button>
-            </div>
-            
-            <!-- Quick Text Messages -->
-            <div class="quick-text">
-                <button class="quick-text-btn" data-text="HAHA!">HAHA!</button>
-                <button class="quick-text-btn" data-text="ចុះចាញ់ទៅ">ចុះចាញ់ទៅ</button>
-                <button class="quick-text-btn" data-text="ចង់មិច?">ចង់មិច?</button>
-                <button class="quick-text-btn" data-text="លេងខូចម៉េស?">លេងខូចម៉េស?</button>
-            </div>
-            
-            <!-- Reaction Display -->
-            <div class="reaction-display" id="reactionDisplay">
-                <!-- Reactions will appear here -->
+        <!-- Chat Button -->
+        <div class="chat-button-container">
+            <button id="chatBtn" class="chat-btn" title="Open Emotes">
+                <span class="chat-icon">💬</span>
+            </button>
+        </div>
+
+        <!-- Emote Menu Modal -->
+        <div id="emoteMenu" class="emote-menu" style="display: none;">
+            <div class="emote-menu-backdrop"></div>
+            <div class="emote-menu-panel">
+                <div class="emote-menu-header">
+                    <h3>Choose Emote</h3>
+                    <button id="closeEmoteMenu" class="close-emote-btn">✕</button>
+                </div>
+                
+                <div class="emote-menu-content">
+                    <!-- Emoji Section -->
+                    <div class="emote-section">
+                        <h4>Emojis</h4>
+                        <div class="emote-grid">
+                            <button class="emote-option" data-type="emoji" data-content="😂">😂</button>
+                            <button class="emote-option" data-type="emoji" data-content="😎">😎</button>
+                            <button class="emote-option" data-type="emoji" data-content="🤔">🤔</button>
+                            <button class="emote-option" data-type="emoji" data-content="😤">😤</button>
+                            <button class="emote-option" data-type="emoji" data-content="👍">👍</button>
+                            <button class="emote-option" data-type="emoji" data-content="👎">👎</button>
+                            <button class="emote-option" data-type="emoji" data-content="🔥">🔥</button>
+                            <button class="emote-option" data-type="emoji" data-content="💯">💯</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Text Section -->
+                    <div class="emote-section">
+                        <h4>Quick Text</h4>
+                        <div class="text-options">
+                            <button class="emote-option text-option" data-type="text" data-content="HAHA!">HAHA!</button>
+                            <button class="emote-option text-option" data-type="text" data-content="ចុះចាញ់ទៅ">ចុះចាញ់ទៅ</button>
+                            <button class="emote-option text-option" data-type="text" data-content="ចង់មិច?">ចង់មិច?</button>
+                            <button class="emote-option text-option" data-type="text" data-content="លេងខូចម៉េស?">លេងខូចម៉េស?</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

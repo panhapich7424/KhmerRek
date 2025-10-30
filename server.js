@@ -382,16 +382,16 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle emoji reactions and quick text
-    socket.on('sendReaction', ({ roomId, type, content, player }) => {
+    // Handle king emotes
+    socket.on('sendEmote', ({ roomId, type, content, player }) => {
         const room = rooms.get(roomId);
-        if (!room) return;
+        if (!room || !room.gameStarted) return;
 
         const playerObj = room.players.find(p => p.id === socket.id);
         if (!playerObj) return;
 
-        // Broadcast reaction to all players in the room
-        io.to(roomId).emit('newReaction', {
+        // Broadcast emote to opponent only
+        socket.to(roomId).emit('newEmote', {
             player: playerObj.color,
             type: type,
             content: content,

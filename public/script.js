@@ -201,7 +201,9 @@ const elements = {
     playAgainBtn: document.getElementById('playAgainBtn'),
     exitGameBtn: document.getElementById('exitGameBtn'),
     bgMusic: document.getElementById('bgMusic'),
-    reactionDisplay: document.getElementById('reactionDisplay'),
+    chatBtn: document.getElementById('chatBtn'),
+    emoteMenu: document.getElementById('emoteMenu'),
+    closeEmoteMenu: document.getElementById('closeEmoteMenu'),
     waitingControls: document.getElementById('waitingControls'),
     exitRoomBtn: document.getElementById('exitRoomBtn'),
     gameStartControls: document.getElementById('gameStartControls'),
@@ -1000,73 +1002,109 @@ elements.exitBotGameBtn.addEventListener('click', () => {
     showNotification('Returned to main menu', 'info');
 });
 
-// Emoji Reactions System
-const sendReaction = (type, content) => {
-    if (!gameState.roomId || gameState.isBot) return;
+// King Emote System
+const sendEmote = (type, content) => {
+    if (!gameState.roomId || gameState.isBot || !gameState.gameStarted) return;
     
     SoundManager.play('notification');
     
-    socket.emit('sendReaction', {
+    socket.emit('sendEmote', {
         roomId: gameState.roomId,
         type: type, // 'emoji' or 'text'
         content: content,
         player: gameState.playerColor
     });
+    
+    // Show emote on own king
+    showKingEmote(gameState.playerColor, content);
+    
+    // Close emote menu
+    elements.emoteMenu.style.display = 'none';
 };
 
-const addReaction = (player, type, content) => {
-    const reactionElement = document.createElement('div');
-    const isOwnReaction = player === gameState.playerColor;
+const showKingEmote = (playerColor, content) => {
+    // Find the king piece for the specified player
+    const kingPiece = playerColor === 'Blue' ? 'P' : 'R';
+    let kingPosition = null;
     
-    reactionElement.className = `reaction-item ${isOwnReaction ? 'own-reaction' : 'opponent-reaction'}`;
-    
-    if (type === 'emoji') {
-        reactionElement.innerHTML = `
-            <span class="reaction-emoji">${content}</span>
-            <span class="reaction-player">${isOwnReaction ? 'You' : 'Opponent'}</span>
-        `;
-    } else {
-        reactionElement.innerHTML = `
-            <span class="reaction-text">${content}</span>
-            <span class="reaction-player">${isOwnReaction ? 'You' : 'Opponent'}</span>
-        `;
+    // Search for the king on the board
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (gameState.board[row][col] === kingPiece) {
+                kingPosition = [row, col];
+                break;
+            }
+        }
+        if (kingPosition) break;
     }
     
-    elements.reactionDisplay.appendChild(reactionElement);
-    elements.reactionDisplay.scrollTop = elements.reactionDisplay.scrollHeight;
+    if (!kingPosition) return; // King not found
     
-    // Auto-remove reaction after 5 seconds
+    // Convert to display coordinates
+    const [displayRow, displayCol] = getDisplayCoordinates(kingPosition[0], kingPosition[1]);
+    
+    // Find the king square element
+    const kingSquare = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
+    if (!kingSquare) return;
+    
+    // Create emote element
+    const emoteElement = document.createElement('div');
+    emoteElement.className = 'king-emote';
+    emoteElement.textContent = content;
+    
+    // Position the emote above the king
+    const rect = kingSquare.getBoundingClientRect();
+    const boardRect = elements.gameBoard.getBoundingClientRect();
+    
+    emoteElement.style.left = (rect.left - boardRect.left + rect.width / 2) + 'px';
+    emoteElement.style.top = (rect.top - boardRect.top - 10) + 'px';
+    emoteElement.style.transform = 'translateX(-50%)';
+    
+    // Add to game board
+    elements.gameBoard.appendChild(emoteElement);
+    
+    // Remove after animation completes
     setTimeout(() => {
-        if (reactionElement.parentNode) {
-            reactionElement.remove();
+        if (emoteElement.parentNode) {
+            emoteElement.remove();
         }
-    }, 5000);
+    }, 1500);
 };
 
-// Initialize emoji and quick text event listeners
-const initializeReactions = () => {
-    // Emoji buttons
-    document.querySelectorAll('.emoji-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const emoji = btn.dataset.emoji;
-            sendReaction('emoji', emoji);
-            
-            // Visual feedback
-            btn.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                btn.style.transform = '';
-            }, 200);
-        });
+// Initialize emote system
+const initializeEmotes = () => {
+    // Chat button
+    elements.chatBtn.addEventListener('click', () => {
+        if (!gameState.gameStarted || gameState.isBot) {
+            showNotification('Emotes only available during multiplayer games!', 'error');
+            return;
+        }
+        SoundManager.play('click');
+        elements.emoteMenu.style.display = 'flex';
     });
     
-    // Quick text buttons
-    document.querySelectorAll('.quick-text-btn').forEach(btn => {
+    // Close emote menu
+    elements.closeEmoteMenu.addEventListener('click', () => {
+        SoundManager.play('click');
+        elements.emoteMenu.style.display = 'none';
+    });
+    
+    // Close on backdrop click
+    elements.emoteMenu.addEventListener('click', (e) => {
+        if (e.target === elements.emoteMenu || e.target.classList.contains('emote-menu-backdrop')) {
+            elements.emoteMenu.style.display = 'none';
+        }
+    });
+    
+    // Emote options
+    document.querySelectorAll('.emote-option').forEach(btn => {
         btn.addEventListener('click', () => {
-            const text = btn.dataset.text;
-            sendReaction('text', text);
+            const type = btn.dataset.type;
+            const content = btn.dataset.content;
+            sendEmote(type, content);
             
             // Visual feedback
-            btn.style.transform = 'translateY(-3px)';
+            btn.style.transform = 'scale(1.1)';
             setTimeout(() => {
                 btn.style.transform = '';
             }, 200);
@@ -1734,9 +1772,9 @@ socket.on('exitedLobby', () => {
     showNotification('Left the lobby', 'info');
 });
 
-// Socket event for reactions
-socket.on('newReaction', ({ player, type, content }) => {
-    addReaction(player, type, content);
+// Socket event for emotes
+socket.on('newEmote', ({ player, type, content }) => {
+    showKingEmote(player, content);
 });
 
 // Initialize the game
@@ -1744,8 +1782,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize sound system
     SoundManager.init();
     
-    // Initialize emoji reactions
-    initializeReactions();
+    // Initialize emote system
+    initializeEmotes();
     
     showScreen('mainMenu');
 
