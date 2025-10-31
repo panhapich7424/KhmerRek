@@ -291,6 +291,7 @@ const showNotification = (message, type = 'info') => {
 
 // Board creation and management
 const createBoard = () => {
+    console.log('🏗️ Creating game board...');
     elements.gameBoard.innerHTML = '';
 
     for (let row = 0; row < 8; row++) {
@@ -397,7 +398,15 @@ const updateBoard = (board) => {
 };
 
 const handleSquareClick = (displayRow, displayCol) => {
-    if (!gameState.gameStarted || gameState.playerColor !== gameState.currentPlayer) {
+    console.log(`🎯 Square clicked: (${displayRow}, ${displayCol}), gameStarted: ${gameState.gameStarted}, currentPlayer: ${gameState.currentPlayer}, playerColor: ${gameState.playerColor}`);
+    
+    if (!gameState.gameStarted) {
+        console.log('❌ Game not started yet');
+        return;
+    }
+    
+    if (gameState.playerColor !== gameState.currentPlayer && !gameState.isBot) {
+        console.log('❌ Not your turn');
         return;
     }
 
@@ -854,12 +863,14 @@ elements.roomInput.addEventListener('keypress', (e) => {
 });
 
 elements.playWithBotBtn.addEventListener('click', () => {
+    console.log('🤖 Bot game button clicked!');
     SoundManager.play('click');
     gameState.roomId = 'BOT_GAME';
     gameState.isBot = true;
     gameState.playerColor = 'Blue';
     gameState.playerPiece = 'O';
 
+    console.log('🎮 Switching to game screen...');
     showScreen('gameScreen');
     setupPlayerDisplay();
     createBoard();
@@ -893,6 +904,21 @@ elements.playWithBotBtn.addEventListener('click', () => {
 
 elements.refreshRoomsBtn.addEventListener('click', () => {
     refreshRoomList();
+});
+
+    gameState.gameStarted = true;
+    gameState.currentPlayer = 'Blue';
+    updateBoard(initialBoard);
+    updateTurnIndicator('Blue');
+
+    elements.roomCode.textContent = 'Room: Bot Game';
+    elements.copyRoomBtn.style.display = 'none';
+    elements.waitingControls.style.display = 'none';
+    elements.gameStartControls.style.display = 'none';
+    elements.gameplayControls.style.display = 'block';
+    elements.exitBotGameBtn.style.display = 'inline-block';
+
+    showNotification('Bot game started! You play as Blue.', 'info');
 });
 
 elements.startGameBtn.addEventListener('click', () => {
@@ -1089,35 +1115,12 @@ const addChatMessage = (player, message) => {
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 };
 
-// Initialize chat system
-const initializeChat = () => {
-    // Send message button
-    elements.sendMessageBtn.addEventListener('click', () => {
-        if (gameState.isBot) {
-            showNotification('Chat only available in multiplayer games!', 'error');
-            return;
-        }
-        sendMessage();
-    });
-    
-    // Enter key to send message
-    elements.messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            if (gameState.isBot) {
-                showNotification('Chat only available in multiplayer games!', 'error');
-                return;
-            }
-            sendMessage();
-        }
-    });
-};
-
 // Bot AI Logic
 const botAI = {
     // Evaluate board position for the bot (Red player)
     evaluateBoard: (board) => {
         let score = 0;
-
+        
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = board[row][col];
@@ -1134,15 +1137,15 @@ const botAI = {
                 }
             }
         }
-
+        
         return score;
     },
-
+    
     // Get all possible moves for a color
     getPossibleMoves: (board, color) => {
         const moves = [];
         const pieces = color === 'Red' ? ['X', 'R'] : ['O', 'P'];
-
+        
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 if (pieces.includes(board[row][col])) {
@@ -1157,58 +1160,56 @@ const botAI = {
                 }
             }
         }
-
+        
         return moves;
     },
-
+    
     // Get valid moves for a specific piece
     getPieceValidMoves: (board, fromRow, fromCol) => {
         const moves = [];
         const directions = [
             [-1, 0], [1, 0], [0, -1], [0, 1] // Horizontal and vertical directions
         ];
-
+        
         directions.forEach(([dRow, dCol]) => {
             let toRow = fromRow + dRow;
             let toCol = fromCol + dCol;
-
+            
             // Check all squares in this direction until we hit a piece or board edge
             while (toRow >= 0 && toRow < 8 && toCol >= 0 && toCol < 8) {
                 if (board[toRow][toCol] !== 'H') {
                     // Hit a piece - stop checking this direction
                     break;
                 }
-
+                
                 moves.push([toRow, toCol]);
-
+                
                 // Continue to next square in this direction
                 toRow += dRow;
                 toCol += dCol;
             }
         });
-
+        
         return moves;
     },
-
+    
     // Simulate a move and return the resulting board
     simulateMove: (board, from, to) => {
         const newBoard = board.map(row => [...row]);
         const piece = newBoard[from[0]][from[1]];
         const currentPlayer = ['X', 'R'].includes(piece) ? 'Red' : 'Blue';
-
+        
         // Move the piece
         newBoard[from[0]][from[1]] = 'H';
         newBoard[to[0]][to[1]] = piece;
-
+        
         // Apply capture rules using the same logic as server
         botAI.checkRekCaptures(newBoard, to[0], to[1], currentPlayer);
         botAI.checkTrappingCaptures(newBoard, currentPlayer);
-
+        
         return newBoard;
     },
-
-
-
+    
     // Check for Rek captures (sandwich capture) - same as server
     checkRekCaptures: (board, toRow, toCol, currentPlayer) => {
         const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
@@ -1252,7 +1253,7 @@ const botAI = {
             SoundManager.play('capture');
         }
     },
-
+    
     // Check for group trapping captures - same as server
     checkTrappingCaptures: (board, currentPlayer) => {
         const opponentPlayer = currentPlayer === 'Blue' ? 'Red' : 'Blue';
@@ -1286,7 +1287,7 @@ const botAI = {
             }
         }
     },
-
+    
     // Find connected group of pieces - same as server
     findConnectedGroup: (board, startRow, startCol, pieceTypes, visited, group) => {
         const stack = [[startRow, startCol]];
@@ -1309,7 +1310,7 @@ const botAI = {
             stack.push([row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]);
         }
     },
-
+    
     // Check if a piece has any legal moves - same as server
     pieceHasLegalMoves: (board, row, col, player) => {
         // Check all four directions (orthogonal movement like a rook)
@@ -1338,20 +1339,38 @@ const botAI = {
 
         return false; // No legal moves found
     },
+    
+    // Check for winner in Rek game (same as server)
+    checkWinner: (board) => {
+        let redKing = false;
+        let blueKing = false;
 
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (board[row][col] === 'R') redKing = true;
+                if (board[row][col] === 'P') blueKing = true;
+            }
+        }
+
+        // Game ends when one King is captured
+        if (!redKing) return 'Blue';
+        if (!blueKing) return 'Red';
+        return null;
+    },
+    
     // Minimax algorithm with alpha-beta pruning
     minimax: (board, depth, isMaximizing, alpha, beta) => {
         if (depth === 0) {
             return botAI.evaluateBoard(board);
         }
-
+        
         const color = isMaximizing ? 'Red' : 'Blue';
         const moves = botAI.getPossibleMoves(board, color);
-
+        
         if (moves.length === 0) {
             return isMaximizing ? -10000 : 10000;
         }
-
+        
         if (isMaximizing) {
             let maxEval = -Infinity;
             for (const move of moves) {
@@ -1374,43 +1393,25 @@ const botAI = {
             return minEval;
         }
     },
-
-    // Check for winner in Rek game (same as server)
-    checkWinner: (board) => {
-        let redKing = false;
-        let blueKing = false;
-
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                if (board[row][col] === 'R') redKing = true;
-                if (board[row][col] === 'P') blueKing = true;
-            }
-        }
-
-        // Game ends when one King is captured
-        if (!redKing) return 'Blue';
-        if (!blueKing) return 'Red';
-        return null;
-    },
-
+    
     // Get the best move for the bot
     getBestMove: (board) => {
         const moves = botAI.getPossibleMoves(board, 'Red');
         if (moves.length === 0) return null;
-
+        
         let bestMove = null;
         let bestScore = -Infinity;
-
+        
         for (const move of moves) {
             const newBoard = botAI.simulateMove(board, move.from, move.to);
             const score = botAI.minimax(newBoard, 3, false, -Infinity, Infinity); // Depth 3 for hard difficulty
-
+            
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
             }
         }
-
+        
         return bestMove;
     }
 };
@@ -1420,15 +1421,15 @@ const executeBotGameMove = (from, to) => {
     // Create new board and apply the player's move
     const newBoard = gameState.board.map(row => [...row]);
     const piece = newBoard[from[0]][from[1]];
-
+    
     // Move the piece
     newBoard[from[0]][from[1]] = 'H';
     newBoard[to[0]][to[1]] = piece;
-
+    
     // Apply capture rules using the same logic as server
     botAI.checkRekCaptures(newBoard, to[0], to[1], 'Blue');
     botAI.checkTrappingCaptures(newBoard, 'Blue');
-
+    
     // Check for win condition (king capture)
     const winner = botAI.checkWinner(newBoard);
     if (winner) {
@@ -1439,14 +1440,14 @@ const executeBotGameMove = (from, to) => {
         showGameOverModal(winner);
         return;
     }
-
+    
     // Switch to bot's turn
     gameState.currentPlayer = 'Red';
     updateBoard(newBoard);
     updateTurnIndicator('Red');
     highlightLastMove(from, to);
     clearSelection();
-
+    
     // Trigger bot move
     executeBotMove();
 };
@@ -1456,26 +1457,26 @@ const executeBotMove = () => {
     if (!gameState.isBot || gameState.currentPlayer !== 'Red' || !gameState.gameStarted) {
         return;
     }
-
+    
     setTimeout(() => {
         const bestMove = botAI.getBestMove(gameState.board);
-
+        
         if (bestMove) {
             // Highlight the bot's move
             gameState.lastMove = { from: bestMove.from, to: bestMove.to };
-
+            
             // Create new board and apply the bot's move
             const newBoard = gameState.board.map(row => [...row]);
             const piece = newBoard[bestMove.from[0]][bestMove.from[1]];
-
+            
             // Move the piece
             newBoard[bestMove.from[0]][bestMove.from[1]] = 'H';
             newBoard[bestMove.to[0]][bestMove.to[1]] = piece;
-
+            
             // Apply capture rules using the same logic as server
             botAI.checkRekCaptures(newBoard, bestMove.to[0], bestMove.to[1], 'Red');
             botAI.checkTrappingCaptures(newBoard, 'Red');
-
+            
             // Check for win condition (king capture)
             const winner = botAI.checkWinner(newBoard);
             if (winner) {
@@ -1486,13 +1487,13 @@ const executeBotMove = () => {
                 showGameOverModal(winner);
                 return;
             }
-
+            
             // Continue game
             gameState.currentPlayer = 'Blue';
             updateBoard(newBoard);
             updateTurnIndicator('Blue');
             highlightLastMove(bestMove.from, bestMove.to);
-
+            
             showNotification('Bot made its move!', 'info');
         }
     }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds for realism
@@ -1510,22 +1511,47 @@ const restartBotGame = () => {
         ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
         ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
     ];
-
+    
     gameState.gameStarted = true;
     gameState.currentPlayer = 'Blue';
     gameState.lastMove = null;
-
+    
     updateBoard(initialBoard);
     updateTurnIndicator('Blue');
     clearSelection();
     clearMoveHighlights();
-
+    
     elements.requestRestartBtn.disabled = false;
     elements.requestRestartBtn.textContent = '🔄 Request Restart';
-
+    
     showNotification('Bot game restarted!', 'info');
 };
 
+// Initialize chat system
+const initializeChat = () => {
+    // Send message button
+    elements.sendMessageBtn.addEventListener('click', () => {
+        if (gameState.isBot) {
+            showNotification('Chat only available in multiplayer games!', 'error');
+            return;
+        }
+        sendMessage();
+    });
+    
+    // Enter key to send message
+    elements.messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            if (gameState.isBot) {
+                showNotification('Chat only available in multiplayer games!', 'error');
+                return;
+            }
+            sendMessage();
+        }
+    });
+};
+
+
+
 // Socket event listeners
 socket.on('playerAssigned', ({ color, piece }) => {
     gameState.playerColor = color;
@@ -1583,196 +1609,7 @@ socket.on('gameStartCountdown', ({ count }) => {
     }
 });
 
-// Socket event listeners
-socket.on('playerAssigned', ({ color, piece }) => {
-    gameState.playerColor = color;
-    gameState.playerPiece = piece;
 
-    showNotification(`You are the ${color} Player`, 'info');
-
-    // Setup player display based on perspective
-    setupPlayerDisplay();
-
-    // Show game screen immediately but with waiting message
-    showScreen('gameScreen');
-    createBoard();
-
-    // Show initial board setup for Rek game
-    const initialBoard = [
-        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'H'],  // Row 0: Red pieces at top
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'R'],  // Row 1: Red King
-        ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],  // Row 2: Red pieces
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 3: Empty
-        ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 4: Empty
-        ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],  // Row 5: Blue pieces
-        ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
-        ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
-    ];
-    updateBoard(initialBoard);
-
-    if (color === 'Blue') {
-        elements.statusMessage.textContent = `Share room code "${gameState.roomId}" with a friend to start playing!`;
-        showNotification(`Room created! Share code: ${gameState.roomId}`, 'info');
-        elements.copyRoomBtn.style.display = 'block';
-        elements.waitingControls.style.display = 'block';
-    } else {
-        elements.statusMessage.textContent = `Joined room ${gameState.roomId}. Waiting for game to start...`;
-        elements.waitingControls.style.display = 'block';
-    }
-});
-
-socket.on('bothPlayersJoined', () => {
-    SoundManager.play('join');
-    elements.statusMessage.textContent = 'Both players connected! Click "Start Game" when ready.';
-    elements.waitingControls.style.display = 'none';
-    elements.gameStartControls.style.display = 'block';
-    elements.copyRoomBtn.style.display = 'none';
-    showNotification('Opponent joined! Get ready to play!', 'info');
-});
-
-socket.on('gameStartCountdown', ({ count }) => {
-    elements.gameStartControls.style.display = 'none';
-    elements.gameStartCountdown.style.display = 'block';
-    elements.countdownNumber.textContent = count;
-    
-    if (count === 0) {
-        elements.gameStartCountdown.style.display = 'none';
-    }
-});
-
-socket.on('startGame', ({ board, currentPlayer, players }) => {
-    gameState.gameStarted = true;
-    gameState.currentPlayer = currentPlayer;
-    gameState.lastMove = null;
-
-    showScreen('gameScreen');
-    createBoard();
-    updateBoard(board);
-    updateTurnIndicator(currentPlayer);
-    clearMoveHighlights();
-
-    // Hide all start game UI elements and show gameplay controls
-    elements.copyRoomBtn.style.display = 'none';
-    elements.gameStartControls.style.display = 'none';
-    elements.gameStartCountdown.style.display = 'none';
-    elements.gameplayControls.style.display = 'block';
-    elements.exitBotGameBtn.style.display = 'none'; // Hide bot exit button for multiplayer
-
-    showNotification(`The game begins! ${currentPlayer} moves first.`, 'info');
-
-    // Optional: Start background music
-    // elements.bgMusic.play().catch(() => {}); // Ignore autoplay restrictions
-});
-
-socket.on('updateBoard', ({ board, currentPlayer, lastMove }) => {
-    gameState.currentPlayer = currentPlayer;
-    gameState.lastMove = lastMove;
-    updateBoard(board);
-    updateTurnIndicator(currentPlayer);
-    clearSelection();
-
-    // Highlight the last move
-    if (lastMove) {
-        highlightLastMove(lastMove.from, lastMove.to);
-    }
-});
-
-socket.on('gameOver', ({ winner, board, lastMove }) => {
-    gameState.gameStarted = false;
-    gameState.lastMove = lastMove;
-    updateBoard(board);
-
-    // Hide gameplay controls when game is over
-    elements.gameplayControls.style.display = 'none';
-    
-    // Stop the timer
-    stopTurnTimer();
-
-    // Highlight the winning move
-    if (lastMove) {
-        highlightLastMove(lastMove.from, lastMove.to);
-    }
-
-    showGameOverModal(winner);
-});
-
-socket.on('restartGame', ({ board, currentPlayer }) => {
-    gameState.gameStarted = true;
-    gameState.currentPlayer = currentPlayer;
-    gameState.lastMove = null;
-
-    hideGameOverModal();
-    hideRestartRequestModal();
-    updateBoard(board);
-    updateTurnIndicator(currentPlayer);
-    clearSelection();
-    clearMoveHighlights();
-
-    // Reset button states
-    elements.playAgainBtn.disabled = false;
-    elements.playAgainBtn.textContent = '⚔️ Battle Again';
-    elements.requestRestartBtn.disabled = false;
-    elements.requestRestartBtn.textContent = '🔄 Request Restart';
-
-    // Show gameplay controls again
-    elements.gameplayControls.style.display = 'block';
-
-    // Show/hide bot exit button based on game type
-    if (gameState.isBot) {
-        elements.exitBotGameBtn.style.display = 'inline-block';
-    } else {
-        elements.exitBotGameBtn.style.display = 'none';
-    }
-
-    // Start timer for multiplayer games
-    if (!gameState.isBot) {
-        startTurnTimer();
-    }
-
-    showNotification('A new battle begins!', 'info');
-});
-
-socket.on('endSession', () => {
-    hideGameOverModal();
-    stopTurnTimer();
-    showScreen('mainMenu');
-    gameState = {
-        roomId: null,
-        playerColor: null,
-        playerPiece: null,
-        currentPlayer: 'Blue',
-        board: [],
-        selectedSquare: null,
-        gameStarted: false,
-        lastMove: null,
-        isBot: false,
-        turnTimeLeft: 60,
-        timerInterval: null
-    };
-
-    elements.roomInput.value = '';
-    showNotification('Returning to main menu...', 'info');
-});
-
-socket.on('roomFull', () => {
-    showScreen('mainMenu');
-    showNotification('This room is full. Try another room.', 'error');
-});
-
-socket.on('roomNotFound', () => {
-    showScreen('mainMenu');
-    showNotification('This room does not exist.', 'error');
-});
-
-socket.on('playerDisconnected', () => {
-    gameState.gameStarted = false;
-    elements.statusMessage.textContent = 'Your opponent has left the room. Waiting for reconnection...';
-    showNotification('Opponent disconnected', 'error');
-});
-
-socket.on('connect', () => {
-    console.log('Connected to game server');
-});
 
 // Removed old chat message handler
 
