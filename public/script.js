@@ -906,21 +906,6 @@ elements.refreshRoomsBtn.addEventListener('click', () => {
     refreshRoomList();
 });
 
-    gameState.gameStarted = true;
-    gameState.currentPlayer = 'Blue';
-    updateBoard(initialBoard);
-    updateTurnIndicator('Blue');
-
-    elements.roomCode.textContent = 'Room: Bot Game';
-    elements.copyRoomBtn.style.display = 'none';
-    elements.waitingControls.style.display = 'none';
-    elements.gameStartControls.style.display = 'none';
-    elements.gameplayControls.style.display = 'block';
-    elements.exitBotGameBtn.style.display = 'inline-block';
-
-    showNotification('Bot game started! You play as Blue.', 'info');
-});
-
 elements.startGameBtn.addEventListener('click', () => {
     socket.emit('playerReady', { roomId: gameState.roomId });
     elements.startGameBtn.disabled = true;
@@ -1035,34 +1020,6 @@ elements.sendMessageBtn.addEventListener('click', () => {
 elements.messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         sendMessage();
-    }
-});
-
-elements.startGameBtn.addEventListener('click', () => {
-    socket.emit('playerReady', { roomId: gameState.roomId });
-    elements.startGameBtn.disabled = true;
-    elements.startGameBtn.textContent = '✅ Ready';
-    showNotification('Waiting for opponent to be ready...', 'info');
-});
-
-elements.exitRoomBtn.addEventListener('click', () => {
-    socket.emit('exitLobby', { roomId: gameState.roomId });
-});
-
-elements.exitLobbyBtn.addEventListener('click', () => {
-    socket.emit('exitLobby', { roomId: gameState.roomId });
-});
-
-elements.requestRestartBtn.addEventListener('click', () => {
-    if (gameState.isBot) {
-        // Restart bot game immediately
-        restartBotGame();
-    } else {
-        // Request restart from opponent
-        socket.emit('requestRestart', { roomId: gameState.roomId });
-        elements.requestRestartBtn.disabled = true;
-        elements.requestRestartBtn.textContent = '⏳ Requesting...';
-        showNotification('Restart request sent to opponent', 'info');
     }
 });
 
