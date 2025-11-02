@@ -1319,6 +1319,21 @@ input[type="text"]::placeholder {
     }
 }
 
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px rgba(78, 205, 196, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+    }
+}
+
 .golden-frame p {
     font-size: 1.2rem;
     color: #b8860b;
@@ -2527,37 +2542,7 @@ t Button */
 .turn-timer.opponent-turn {
     border-color: #ff6b6b;
     box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-}/* 
-Sound Toggle Button */
-.sound-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(145deg, #3a4a5c, #2a3441);
-    border: 3px solid #5a6a7c;
-    border-radius: 50%;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.sound-toggle:hover {
-    background: linear-gradient(145deg, #4a5a6c, #3a4a5c);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.sound-toggle:active {
-    transform: scale(0.95);
-}/* Emoji R
+}/* Sound toggle removed *//* Emoji R
 eactions & Quick Text */
 .reactions-container {
     background: linear-gradient(145deg, #3a4a5c, #2a3441);

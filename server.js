@@ -440,8 +440,14 @@ io.on('connection', (socket) => {
         if (choice === 'playAgain') {
             room.playAgainVotes.add(socket.id);
 
+            // Notify other players that this player wants to play again
+            socket.to(roomId).emit('opponentWantsPlayAgain');
+
             // If both players voted to play again
             if (room.playAgainVotes.size === 2) {
+                // Notify both players that game is starting
+                io.to(roomId).emit('bothPlayersWantPlayAgain');
+                
                 room.board = createInitialBoard();
                 room.currentPlayer = 'Blue'; // Blue always starts first
                 room.gameStarted = true;
@@ -455,6 +461,9 @@ io.on('connection', (socket) => {
                 });
             }
         } else if (choice === 'exit') {
+            // Notify other player that someone exited during play again waiting
+            socket.to(roomId).emit('opponentExitedPlayAgain');
+            
             io.to(roomId).emit('endSession');
             rooms.delete(roomId);
         }
@@ -563,6 +572,9 @@ io.on('connection', (socket) => {
             if (room.players.length === 0) {
                 rooms.delete(roomId);
             } else {
+                // Clear any pending play again votes when someone exits
+                room.playAgainVotes.clear();
+                
                 // Notify remaining player
                 socket.to(roomId).emit('playerDisconnected');
             }
@@ -592,6 +604,9 @@ io.on('connection', (socket) => {
                         broadcastRoomList();
                     }
                 } else {
+                    // Clear any pending play again votes when someone disconnects
+                    room.playAgainVotes.clear();
+                    
                     socket.to(roomId).emit('playerDisconnected');
                     // Update room list to show room as available again
                     if (wasPublic) {

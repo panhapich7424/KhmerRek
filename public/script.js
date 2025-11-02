@@ -33,149 +33,31 @@ let gameState = {
     timerInterval: null // Timer interval reference
 };
 
-// Sound System
+// Sound System (disabled - no sound effects)
 const SoundManager = {
     sounds: {},
-    enabled: true,
-    volume: 0.15, // Much quieter
+    enabled: false, // Disabled by default - no sound effects
+    volume: 0,      // Volume set to 0
     audioContext: null,
-    
+
     init() {
-        // Load preferences
-        this.loadPreferences();
-        
-        // Initialize audio context
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (error) {
-            console.log('Web Audio API not supported');
-            return;
-        }
-        
-        // Generate procedural sounds
-        this.generateSounds();
-        
-        // Add sound toggle button
-        this.createSoundToggle();
+        // Sound system disabled - no initialization
+        console.log('🔇 Sound system disabled');
     },
-    
-    generateSounds() {
-        if (!this.audioContext) return;
-        
-        // Create softer, smoother sound effects
-        this.sounds.clickBuffer = this.createToneBuffer(600, 0.08, 0.15); // Softer click
-        this.sounds.moveBuffer = this.createSweepBuffer(350, 450, 0.2, 0.3); // Gentle move
-        this.sounds.captureBuffer = this.createSweepBuffer(500, 250, 0.25, 0.4); // Subtle capture
-        this.sounds.winBuffer = this.createChordBuffer([440, 554, 659], 0.6, 0.5); // Gentle win
-        this.sounds.loseBuffer = this.createSweepBuffer(250, 150, 0.4, 0.5); // Soft lose
-        this.sounds.notificationBuffer = this.createToneBuffer(700, 0.12, 0.2); // Gentle notification
-        this.sounds.errorBuffer = this.createToneBuffer(300, 0.15, 0.3); // Soft error tone
-        this.sounds.joinBuffer = this.createSweepBuffer(350, 500, 0.25, 0.4); // Pleasant join
-    },
-    
-    createToneBuffer(frequency, duration, decay) {
-        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < data.length; i++) {
-            data[i] = Math.sin(2 * Math.PI * frequency * i / this.audioContext.sampleRate) * 
-                     Math.exp(-i / (this.audioContext.sampleRate * decay));
-        }
-        
-        return buffer;
-    },
-    
-    createSweepBuffer(startFreq, endFreq, duration, decay) {
-        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < data.length; i++) {
-            const progress = i / data.length;
-            const freq = startFreq + (endFreq - startFreq) * progress;
-            data[i] = Math.sin(2 * Math.PI * freq * i / this.audioContext.sampleRate) * 
-                     Math.exp(-i / (this.audioContext.sampleRate * decay));
-        }
-        
-        return buffer;
-    },
-    
-    createChordBuffer(frequencies, duration, decay) {
-        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < data.length; i++) {
-            let sample = 0;
-            frequencies.forEach(freq => {
-                sample += Math.sin(2 * Math.PI * freq * i / this.audioContext.sampleRate) * (1 / frequencies.length);
-            });
-            data[i] = sample * Math.exp(-i / (this.audioContext.sampleRate * decay));
-        }
-        
-        return buffer;
-    },
-    
-    createNoiseBuffer(baseFreq, duration, decay) {
-        const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < data.length; i++) {
-            const freq = baseFreq + Math.sin(i / 100) * 50;
-            data[i] = Math.sin(2 * Math.PI * freq * i / this.audioContext.sampleRate) * 
-                     Math.exp(-i / (this.audioContext.sampleRate * decay));
-        }
-        
-        return buffer;
-    },
-    
-    createSoundToggle() {
-        const soundToggle = document.createElement('button');
-        soundToggle.id = 'soundToggle';
-        soundToggle.innerHTML = this.enabled ? '🔊' : '🔇';
-        soundToggle.className = 'sound-toggle';
-        soundToggle.title = 'Toggle Sound';
-        
-        soundToggle.addEventListener('click', () => {
-            this.toggle();
-            soundToggle.innerHTML = this.enabled ? '🔊' : '🔇';
-            this.play('click');
-        });
-        
-        document.body.appendChild(soundToggle);
-    },
-    
+
     play(soundName) {
-        if (!this.enabled || !this.audioContext) return;
-        
-        try {
-            const bufferName = soundName + 'Buffer';
-            
-            if (this.sounds[bufferName]) {
-                const source = this.audioContext.createBufferSource();
-                const gainNode = this.audioContext.createGain();
-                
-                source.buffer = this.sounds[bufferName];
-                gainNode.gain.value = this.volume;
-                
-                source.connect(gainNode);
-                gainNode.connect(this.audioContext.destination);
-                
-                source.start();
-            }
-        } catch (error) {
-            console.log('Audio playback failed:', error);
-        }
+        // No sound effects - function exists but does nothing
+        return;
     },
-    
+
     toggle() {
+        // Toggle function exists but sounds remain disabled
         this.enabled = !this.enabled;
-        localStorage.setItem('soundEnabled', this.enabled);
+        console.log(`🔇 Sound toggle: ${this.enabled ? 'enabled' : 'disabled'} (but no effects)`);
     },
-    
+
     loadPreferences() {
-        const saved = localStorage.getItem('soundEnabled');
-        if (saved !== null) {
-            this.enabled = saved === 'true';
-        }
+        // No preferences to load
     }
 };
 
@@ -193,7 +75,7 @@ const elements = {
     joinRoomBtn: document.getElementById('joinRoomBtn'),
     publicRoomsBtn: document.getElementById('publicRoomsBtn'),
     playWithBotBtn: document.getElementById('playWithBotBtn'),
-    
+
     // Modal elements
     roomSettingsModal: document.getElementById('roomSettingsModal'),
     confirmCreateBtn: document.getElementById('confirmCreateBtn'),
@@ -203,13 +85,13 @@ const elements = {
     confirmJoinBtn: document.getElementById('confirmJoinBtn'),
     publicRoomsModal: document.getElementById('publicRoomsModal'),
     closePublicModal: document.getElementById('closePublicModal'),
-    
+
     // Game elements
     gameBoard: document.getElementById('gameBoard'),
     roomCode: document.getElementById('roomCode'),
     copyRoomBtn: document.getElementById('copyRoomBtn'),
     statusMessage: document.getElementById('statusMessage'),
-    
+
     // Player info elements
     topPlayerPiece: document.getElementById('topPlayerPiece'),
     topPlayerName: document.getElementById('topPlayerName'),
@@ -217,7 +99,7 @@ const elements = {
     bottomPlayerPiece: document.getElementById('bottomPlayerPiece'),
     bottomPlayerName: document.getElementById('bottomPlayerName'),
     bottomPlayerTurn: document.getElementById('bottomPlayerTurn'),
-    
+
     // Game controls
     waitingControls: document.getElementById('waitingControls'),
     exitRoomBtn: document.getElementById('exitRoomBtn'),
@@ -230,22 +112,22 @@ const elements = {
     gameplayControls: document.getElementById('gameplayControls'),
     requestRestartBtn: document.getElementById('requestRestartBtn'),
     exitBotGameBtn: document.getElementById('exitBotGameBtn'),
-    
+
     // Modals
     gameOverModal: document.getElementById('gameOverModal'),
     winnerText: document.getElementById('winnerText'),
     winnerMessage: document.getElementById('winnerMessage'),
     playAgainBtn: document.getElementById('playAgainBtn'),
     exitGameBtn: document.getElementById('exitGameBtn'),
-    
+
     // Missing elements that need to be handled
     acceptRestartBtn: document.getElementById('acceptRestartBtn'),
     declineRestartBtn: document.getElementById('declineRestartBtn'),
-    
+
     // Room list
     refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
     roomList: document.getElementById('roomList'),
-    
+
     // Quick chat system
     quickChatBtn: document.getElementById('quickChatBtn'),
     quickChatMenu: document.getElementById('quickChatMenu')
@@ -268,7 +150,7 @@ const showNotification = (message, type = 'info') => {
     } else {
         SoundManager.play('notification');
     }
-    
+
     // Simple notification system
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -402,12 +284,12 @@ const updateBoard = (board) => {
 
 const handleSquareClick = (displayRow, displayCol) => {
     console.log(`🎯 Square clicked: (${displayRow}, ${displayCol}), gameStarted: ${gameState.gameStarted}, currentPlayer: ${gameState.currentPlayer}, playerColor: ${gameState.playerColor}`);
-    
+
     if (!gameState.gameStarted) {
         console.log('❌ Game not started yet');
         return;
     }
-    
+
     if (gameState.playerColor !== gameState.currentPlayer && !gameState.isBot) {
         console.log('❌ Not your turn');
         return;
@@ -423,7 +305,7 @@ const handleSquareClick = (displayRow, displayCol) => {
         // Store the move for highlighting
         gameState.lastMove = { from: actualFrom, to: actualTo };
 
-        // Play move sound
+        // Play move sound (no effect)
         SoundManager.play('move');
 
         if (gameState.isBot) {
@@ -468,12 +350,12 @@ const handlePieceClick = (displayRow, displayCol) => {
     console.log(`Player pieces: ${playerPieces}, clicked piece: ${piece}`);
 
     if (playerPieces.includes(piece)) {
-        SoundManager.play('click');
+        SoundManager.play('click'); // No sound effect
         clearSelection();
         selectPiece(displayRow, displayCol);
         showNotification(`Selected ${piece} piece`, 'info');
     } else {
-        SoundManager.play('error');
+        SoundManager.play('error'); // No sound effect
         showNotification('That\'s not your piece!', 'error');
     }
 };
@@ -614,23 +496,51 @@ const highlightLastMove = (from, to) => {
 
 
 const showGameOverModal = (winner) => {
-    // Play win/lose sound
+    // Play win/lose sound (no effect)
     if (winner === gameState.playerColor) {
         SoundManager.play('win');
     } else {
         SoundManager.play('lose');
     }
-    
+
     elements.winnerText.textContent = `${winner} Wins!`;
     elements.winnerMessage.textContent = winner === gameState.playerColor
         ? "Victory is yours! Well played!"
         : "Good game! Better luck next time.";
+
+    // Reset buttons for normal game over (show both buttons)
+    elements.playAgainBtn.style.display = 'block';
+    elements.exitGameBtn.style.display = 'block';
+    elements.playAgainBtn.disabled = false;
+    elements.playAgainBtn.innerHTML = '⚔️ Battle Again';
+    elements.playAgainBtn.style.opacity = '1';
+    elements.playAgainBtn.style.background = '';
+    elements.playAgainBtn.style.animation = '';
+    elements.exitGameBtn.style.width = '';
 
     elements.gameOverModal.classList.add('active');
 };
 
 const hideGameOverModal = () => {
     elements.gameOverModal.classList.remove('active');
+};
+
+const showDisconnectionWinModal = () => {
+    // Play win sound (no effect)
+    SoundManager.play('win');
+
+    elements.winnerText.textContent = 'You Win!';
+    elements.winnerMessage.textContent = 'Victory by disconnection! Your opponent left the game.';
+
+    // Hide play again button and only show exit
+    elements.playAgainBtn.style.display = 'none';
+    elements.exitGameBtn.style.display = 'block';
+    elements.exitGameBtn.innerHTML = '🚪 Return to Menu';
+    elements.exitGameBtn.style.width = '100%';
+
+    elements.gameOverModal.classList.add('active');
+
+    showNotification('You win! Opponent disconnected.', 'info');
 };
 
 const showRestartRequestModal = (requesterName) => {
@@ -653,23 +563,23 @@ const startTurnTimer = () => {
 
     elements.turnTimer.style.display = 'block';
     gameState.turnTimeLeft = 60; // Reset to 60 seconds
-    
+
     // Update timer display class based on whose turn it is
     const isMyTurn = gameState.playerColor === gameState.currentPlayer;
     elements.turnTimer.className = `turn-timer ${isMyTurn ? 'my-turn' : 'opponent-turn'}`;
-    
+
     updateTimerDisplay();
-    
+
     // Clear any existing timer
     if (gameState.timerInterval) {
         clearInterval(gameState.timerInterval);
     }
-    
+
     // Start new timer
     gameState.timerInterval = setInterval(() => {
         gameState.turnTimeLeft--;
         updateTimerDisplay();
-        
+
         // Check if time is up
         if (gameState.turnTimeLeft <= 0) {
             clearInterval(gameState.timerInterval);
@@ -681,15 +591,15 @@ const startTurnTimer = () => {
 const updateTimerDisplay = () => {
     const minutes = Math.floor(gameState.turnTimeLeft / 60);
     const seconds = gameState.turnTimeLeft % 60;
-    
+
     elements.timerMinutes.textContent = minutes;
     elements.timerSeconds.textContent = seconds.toString().padStart(2, '0');
-    
+
     // Update timer styling based on time left
     elements.timerDisplay = document.querySelector('.timer-display');
     if (elements.timerDisplay) {
         elements.timerDisplay.classList.remove('timer-warning', 'timer-critical');
-        
+
         if (gameState.turnTimeLeft <= 10) {
             elements.timerDisplay.classList.add('timer-critical');
         } else if (gameState.turnTimeLeft <= 30) {
@@ -709,7 +619,7 @@ const stopTurnTimer = () => {
 const handleTimeUp = () => {
     // Only handle time up for the current player's turn
     const isMyTurn = gameState.playerColor === gameState.currentPlayer;
-    
+
     if (isMyTurn && gameState.gameStarted) {
         // Player's time is up - forfeit turn
         showNotification('Time\'s up! Turn forfeited.', 'error');
@@ -719,20 +629,20 @@ const handleTimeUp = () => {
 
 const updateTurnIndicator = (currentPlayer) => {
     const isMyTurn = gameState.playerColor === currentPlayer;
-    
+
     // Update turn indicators based on perspective
     elements.bottomPlayerTurn.classList.toggle('active', isMyTurn);
     elements.topPlayerTurn.classList.toggle('active', !isMyTurn);
-    
-    elements.statusMessage.textContent = isMyTurn 
-        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!` 
+
+    elements.statusMessage.textContent = isMyTurn
+        ? `Your turn (${gameState.playerColor}) - Choose your move wisely!`
         : `Opponent's turn (${currentPlayer}) - Waiting for opponent...`;
-    
+
     // Start timer for multiplayer games
     if (gameState.gameStarted && !gameState.isBot) {
         startTurnTimer();
     }
-    
+
     console.log(`Turn: ${currentPlayer}, My Color: ${gameState.playerColor}, My Turn: ${isMyTurn}`);
 };
 
@@ -800,7 +710,7 @@ elements.confirmCreateBtn.addEventListener('click', () => {
     elements.roomCode.textContent = `Room: ${roomId}`;
 
     console.log('🏠 Creating room:', roomId, 'Type:', roomType, 'Socket connected:', socket.connected);
-    
+
     elements.roomSettingsModal.style.display = 'none';
     showScreen('loadingScreen');
     socket.emit('createRoom', { roomId, isPublic: roomType === 'public' });
@@ -905,7 +815,7 @@ elements.playWithBotBtn.addEventListener('click', () => {
     elements.gameStartControls.style.display = 'none';
     elements.gameplayControls.style.display = 'block';
     elements.exitBotGameBtn.style.display = 'inline-block';
-    
+
     // Show quick chat for testing (normally hidden for bot games)
     if (elements.quickChatBtn) {
         elements.quickChatBtn.classList.add('visible');
@@ -950,12 +860,12 @@ elements.requestRestartBtn.addEventListener('click', () => {
 elements.exitBotGameBtn.addEventListener('click', () => {
     // Exit bot game and return to main menu
     showScreen('mainMenu');
-    
+
     // Hide quick chat
     if (elements.quickChatBtn) {
         elements.quickChatBtn.style.display = 'none';
     }
-    
+
     gameState = {
         roomId: null,
         playerColor: null,
@@ -983,7 +893,10 @@ elements.playAgainBtn.addEventListener('click', () => {
         });
 
         elements.playAgainBtn.disabled = true;
-        elements.playAgainBtn.textContent = 'Waiting...';
+        elements.playAgainBtn.innerHTML = '⏳ Waiting for opponent...';
+        elements.playAgainBtn.style.opacity = '0.6';
+
+        showNotification('Waiting for opponent to click Play Again...', 'info');
     }
 });
 
@@ -992,12 +905,12 @@ elements.exitGameBtn.addEventListener('click', () => {
         // Exit bot game directly
         hideGameOverModal();
         showScreen('mainMenu');
-        
+
         // Hide quick chat
         if (elements.quickChatBtn) {
             elements.quickChatBtn.style.display = 'none';
         }
-        
+
         gameState = {
             roomId: null,
             playerColor: null,
@@ -1062,7 +975,7 @@ const botAI = {
     // Evaluate board position for the bot (Red player)
     evaluateBoard: (board) => {
         let score = 0;
-        
+
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = board[row][col];
@@ -1079,15 +992,15 @@ const botAI = {
                 }
             }
         }
-        
+
         return score;
     },
-    
+
     // Get all possible moves for a color
     getPossibleMoves: (board, color) => {
         const moves = [];
         const pieces = color === 'Red' ? ['X', 'R'] : ['O', 'P'];
-        
+
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 if (pieces.includes(board[row][col])) {
@@ -1102,56 +1015,56 @@ const botAI = {
                 }
             }
         }
-        
+
         return moves;
     },
-    
+
     // Get valid moves for a specific piece
     getPieceValidMoves: (board, fromRow, fromCol) => {
         const moves = [];
         const directions = [
             [-1, 0], [1, 0], [0, -1], [0, 1] // Horizontal and vertical directions
         ];
-        
+
         directions.forEach(([dRow, dCol]) => {
             let toRow = fromRow + dRow;
             let toCol = fromCol + dCol;
-            
+
             // Check all squares in this direction until we hit a piece or board edge
             while (toRow >= 0 && toRow < 8 && toCol >= 0 && toCol < 8) {
                 if (board[toRow][toCol] !== 'H') {
                     // Hit a piece - stop checking this direction
                     break;
                 }
-                
+
                 moves.push([toRow, toCol]);
-                
+
                 // Continue to next square in this direction
                 toRow += dRow;
                 toCol += dCol;
             }
         });
-        
+
         return moves;
     },
-    
+
     // Simulate a move and return the resulting board
     simulateMove: (board, from, to) => {
         const newBoard = board.map(row => [...row]);
         const piece = newBoard[from[0]][from[1]];
         const currentPlayer = ['X', 'R'].includes(piece) ? 'Red' : 'Blue';
-        
+
         // Move the piece
         newBoard[from[0]][from[1]] = 'H';
         newBoard[to[0]][to[1]] = piece;
-        
+
         // Apply capture rules using the same logic as server
         botAI.checkRekCaptures(newBoard, to[0], to[1], currentPlayer);
         botAI.checkTrappingCaptures(newBoard, currentPlayer);
-        
+
         return newBoard;
     },
-    
+
     // Check for Rek captures (sandwich capture) - same as server
     checkRekCaptures: (board, toRow, toCol, currentPlayer) => {
         const playerPieces = currentPlayer === 'Blue' ? ['O', 'P'] : ['X', 'R'];
@@ -1190,12 +1103,12 @@ const botAI = {
             }
         });
 
-        // Play capture sound if any captures were made
+        // Play capture sound if any captures were made (no effect)
         if (capturesMade) {
             SoundManager.play('capture');
         }
     },
-    
+
     // Check for group trapping captures - same as server
     checkTrappingCaptures: (board, currentPlayer) => {
         const opponentPlayer = currentPlayer === 'Blue' ? 'Red' : 'Blue';
@@ -1222,14 +1135,14 @@ const botAI = {
                         group.forEach(([r, c]) => {
                             board[r][c] = 'H';
                         });
-                        // Play capture sound for trapped pieces
+                        // Play capture sound for trapped pieces (no effect)
                         SoundManager.play('capture');
                     }
                 }
             }
         }
     },
-    
+
     // Find connected group of pieces - same as server
     findConnectedGroup: (board, startRow, startCol, pieceTypes, visited, group) => {
         const stack = [[startRow, startCol]];
@@ -1252,7 +1165,7 @@ const botAI = {
             stack.push([row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]);
         }
     },
-    
+
     // Check if a piece has any legal moves - same as server
     pieceHasLegalMoves: (board, row, col, player) => {
         // Check all four directions (orthogonal movement like a rook)
@@ -1281,7 +1194,7 @@ const botAI = {
 
         return false; // No legal moves found
     },
-    
+
     // Check for winner in Rek game (same as server)
     checkWinner: (board) => {
         let redKing = false;
@@ -1299,20 +1212,20 @@ const botAI = {
         if (!blueKing) return 'Red';
         return null;
     },
-    
+
     // Minimax algorithm with alpha-beta pruning
     minimax: (board, depth, isMaximizing, alpha, beta) => {
         if (depth === 0) {
             return botAI.evaluateBoard(board);
         }
-        
+
         const color = isMaximizing ? 'Red' : 'Blue';
         const moves = botAI.getPossibleMoves(board, color);
-        
+
         if (moves.length === 0) {
             return isMaximizing ? -10000 : 10000;
         }
-        
+
         if (isMaximizing) {
             let maxEval = -Infinity;
             for (const move of moves) {
@@ -1335,25 +1248,25 @@ const botAI = {
             return minEval;
         }
     },
-    
+
     // Get the best move for the bot
     getBestMove: (board) => {
         const moves = botAI.getPossibleMoves(board, 'Red');
         if (moves.length === 0) return null;
-        
+
         let bestMove = null;
         let bestScore = -Infinity;
-        
+
         for (const move of moves) {
             const newBoard = botAI.simulateMove(board, move.from, move.to);
             const score = botAI.minimax(newBoard, 3, false, -Infinity, Infinity); // Depth 3 for hard difficulty
-            
+
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
             }
         }
-        
+
         return bestMove;
     }
 };
@@ -1363,15 +1276,15 @@ const executeBotGameMove = (from, to) => {
     // Create new board and apply the player's move
     const newBoard = gameState.board.map(row => [...row]);
     const piece = newBoard[from[0]][from[1]];
-    
+
     // Move the piece
     newBoard[from[0]][from[1]] = 'H';
     newBoard[to[0]][to[1]] = piece;
-    
+
     // Apply capture rules using the same logic as server
     botAI.checkRekCaptures(newBoard, to[0], to[1], 'Blue');
     botAI.checkTrappingCaptures(newBoard, 'Blue');
-    
+
     // Check for win condition (king capture)
     const winner = botAI.checkWinner(newBoard);
     if (winner) {
@@ -1382,14 +1295,14 @@ const executeBotGameMove = (from, to) => {
         showGameOverModal(winner);
         return;
     }
-    
+
     // Switch to bot's turn
     gameState.currentPlayer = 'Red';
     updateBoard(newBoard);
     updateTurnIndicator('Red');
     highlightLastMove(from, to);
     clearSelection();
-    
+
     // Trigger bot move
     executeBotMove();
 };
@@ -1399,26 +1312,26 @@ const executeBotMove = () => {
     if (!gameState.isBot || gameState.currentPlayer !== 'Red' || !gameState.gameStarted) {
         return;
     }
-    
+
     setTimeout(() => {
         const bestMove = botAI.getBestMove(gameState.board);
-        
+
         if (bestMove) {
             // Highlight the bot's move
             gameState.lastMove = { from: bestMove.from, to: bestMove.to };
-            
+
             // Create new board and apply the bot's move
             const newBoard = gameState.board.map(row => [...row]);
             const piece = newBoard[bestMove.from[0]][bestMove.from[1]];
-            
+
             // Move the piece
             newBoard[bestMove.from[0]][bestMove.from[1]] = 'H';
             newBoard[bestMove.to[0]][bestMove.to[1]] = piece;
-            
+
             // Apply capture rules using the same logic as server
             botAI.checkRekCaptures(newBoard, bestMove.to[0], bestMove.to[1], 'Red');
             botAI.checkTrappingCaptures(newBoard, 'Red');
-            
+
             // Check for win condition (king capture)
             const winner = botAI.checkWinner(newBoard);
             if (winner) {
@@ -1429,13 +1342,16 @@ const executeBotMove = () => {
                 showGameOverModal(winner);
                 return;
             }
-            
+
             // Continue game
             gameState.currentPlayer = 'Blue';
             updateBoard(newBoard);
             updateTurnIndicator('Blue');
             highlightLastMove(bestMove.from, bestMove.to);
-            
+
+            // Play move sound for bot's move (no effect)
+            SoundManager.play('move');
+
             showNotification('Bot made its move!', 'info');
         }
     }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds for realism
@@ -1453,19 +1369,19 @@ const restartBotGame = () => {
         ['P', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  // Row 6: Blue King
         ['H', 'O', 'O', 'O', 'O', 'O', 'O', 'O']   // Row 7: Blue pieces at bottom
     ];
-    
+
     gameState.gameStarted = true;
     gameState.currentPlayer = 'Blue';
     gameState.lastMove = null;
-    
+
     updateBoard(initialBoard);
     updateTurnIndicator('Blue');
     clearSelection();
     clearMoveHighlights();
-    
+
     elements.requestRestartBtn.disabled = false;
     elements.requestRestartBtn.textContent = '🔄 Request Restart';
-    
+
     showNotification('Bot game restarted!', 'info');
 };
 
@@ -1515,7 +1431,7 @@ socket.on('playerAssigned', ({ color, piece }) => {
 });
 
 socket.on('bothPlayersJoined', () => {
-    SoundManager.play('join');
+    SoundManager.play('join'); // No sound effect
     elements.statusMessage.textContent = 'Both players connected! Click "Start Game" when ready.';
     elements.waitingControls.style.display = 'none';
     elements.gameStartControls.style.display = 'block';
@@ -1544,7 +1460,7 @@ socket.on('startGame', ({ board, currentPlayer, players }) => {
 
     elements.gameStartCountdown.style.display = 'none';
     elements.gameplayControls.style.display = 'block';
-    
+
     // Show quick chat for multiplayer games
     if (elements.quickChatBtn && !gameState.isBot) {
         elements.quickChatBtn.classList.add('visible');
@@ -1558,6 +1474,9 @@ socket.on('updateBoard', ({ board, currentPlayer, lastMove }) => {
     gameState.currentPlayer = currentPlayer;
     updateBoard(board);
     updateTurnIndicator(currentPlayer);
+
+    // Play move sound for opponent's move (no effect)
+    SoundManager.play('move');
 
     if (lastMove) {
         highlightLastMove(lastMove.from, lastMove.to);
@@ -1595,21 +1514,30 @@ socket.on('restartGame', ({ board, currentPlayer }) => {
 });
 
 socket.on('playerDisconnected', () => {
-    showNotification('Opponent disconnected', 'error');
-    elements.statusMessage.textContent = 'Opponent disconnected. Waiting for reconnection...';
-    gameState.gameStarted = false;
-    elements.gameplayControls.style.display = 'none';
-    elements.waitingControls.style.display = 'block';
+    if (gameState.gameStarted) {
+        // Player disconnected during gameplay - you win!
+        gameState.gameStarted = false;
+        elements.gameplayControls.style.display = 'none';
+
+        // Show win modal with only exit button
+        showDisconnectionWinModal();
+    } else {
+        // Player disconnected in lobby
+        showNotification('Opponent disconnected', 'error');
+        elements.statusMessage.textContent = 'Opponent disconnected. Waiting for reconnection...';
+        elements.gameplayControls.style.display = 'none';
+        elements.waitingControls.style.display = 'block';
+    }
 });
 
 socket.on('endSession', () => {
     showScreen('mainMenu');
-    
+
     // Hide quick chat
     if (elements.quickChatBtn) {
         elements.quickChatBtn.style.display = 'none';
     }
-    
+
     gameState = {
         roomId: null,
         playerColor: null,
@@ -1646,6 +1574,44 @@ socket.on('roomListUpdated', (rooms) => {
 socket.on('disconnect', () => {
     console.log('Disconnected from game server');
     showNotification('Connection lost. Attempting to reconnect...', 'error');
+});
+
+// Handle play again requests
+socket.on('opponentWantsPlayAgain', () => {
+    showNotification('Opponent wants to play again!', 'info');
+
+    // Update the play again button to show opponent is waiting
+    if (elements.playAgainBtn && !elements.playAgainBtn.disabled) {
+        elements.playAgainBtn.innerHTML = '⚔️ Opponent Ready - Click to Start!';
+        elements.playAgainBtn.style.background = 'linear-gradient(145deg, #4ecdc4, #45b7aa)';
+        elements.playAgainBtn.style.animation = 'pulse 1s infinite';
+    }
+});
+
+// Handle both players ready for play again
+socket.on('bothPlayersWantPlayAgain', () => {
+    showNotification('Both players ready! Starting new game...', 'info');
+    hideGameOverModal();
+});
+
+// Handle when opponent exits during play again waiting
+socket.on('opponentExitedPlayAgain', () => {
+    showNotification('Opponent left the game', 'error');
+    hideGameOverModal();
+    showScreen('mainMenu');
+
+    // Reset game state
+    gameState = {
+        roomId: null,
+        playerColor: null,
+        playerPiece: null,
+        currentPlayer: 'Blue',
+        board: [],
+        selectedSquare: null,
+        gameStarted: false,
+        lastMove: null,
+        isBot: false
+    };
 });
 
 socket.on('restartRequested', ({ requesterName }) => {
@@ -1686,7 +1652,7 @@ let quickChatCooldown = false;
 const QuickChat = {
     init() {
         console.log('🎭 Initializing QuickChat system...');
-        
+
         if (!elements.quickChatBtn) {
             console.error('❌ Quick chat button not found!');
             return;
@@ -1701,8 +1667,8 @@ const QuickChat = {
 
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (elements.quickChatMenu && 
-                !elements.quickChatMenu.contains(e.target) && 
+            if (elements.quickChatMenu &&
+                !elements.quickChatMenu.contains(e.target) &&
                 !elements.quickChatBtn.contains(e.target)) {
                 this.closeMenu();
             }
@@ -1710,20 +1676,20 @@ const QuickChat = {
 
         // Handle emoji and text buttons
         this.setupChatButtons();
-        
+
         // Test the button immediately
         setTimeout(() => {
             this.testButton();
         }, 1000);
-        
+
         console.log('✅ QuickChat initialized successfully');
-        
+
         // Add global test functions for debugging
         window.testPopup = (color, message) => {
             console.log(`🧪 Testing popup: ${color} - ${message}`);
             this.showPopup(color || 'Blue', message || 'Test Message');
         };
-        
+
         window.testSimplePopup = (message) => {
             console.log(`🧪 Testing simple popup: ${message}`);
             const popup = document.createElement('div');
@@ -1749,7 +1715,7 @@ const QuickChat = {
                 if (popup.parentNode) popup.parentNode.removeChild(popup);
             }, 1500);
         };
-        
+
         console.log('🧪 Test functions added:');
         console.log('  - testPopup("Blue", "Test!")');
         console.log('  - testSimplePopup("Hello!")');
@@ -1770,7 +1736,7 @@ const QuickChat = {
         setTimeout(() => {
             const chatButtons = document.querySelectorAll('.emoji-btn, .text-btn');
             console.log(`🔘 Found ${chatButtons.length} chat buttons`);
-            
+
             chatButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     console.log('🎯 Chat button clicked:', btn.dataset.value);
@@ -1791,9 +1757,9 @@ const QuickChat = {
 
         const isVisible = elements.quickChatMenu.style.display === 'block';
         elements.quickChatMenu.style.display = isVisible ? 'none' : 'block';
-        
+
         if (!isVisible) {
-            SoundManager.play('click');
+            SoundManager.play('click'); // No sound effect
             console.log('📖 Quick chat menu opened');
         } else {
             console.log('📕 Quick chat menu closed');
@@ -1808,7 +1774,7 @@ const QuickChat = {
 
     sendQuickChat(type, value) {
         console.log(`📤 Sending quick chat: ${type} - ${value}`);
-        
+
         if (quickChatCooldown) {
             showNotification('Please wait before sending another message', 'error');
             return;
@@ -1819,8 +1785,8 @@ const QuickChat = {
             console.log('🤖 Bot game: Testing popup on your king');
             this.showPopup(gameState.playerColor, value);
             this.closeMenu();
-            SoundManager.play('notification');
-            
+            SoundManager.play('notification'); // No sound effect
+
             // Start cooldown
             quickChatCooldown = true;
             this.updateButtonStates(true);
@@ -1853,7 +1819,7 @@ const QuickChat = {
         // Close menu
         this.closeMenu();
 
-        // Play sound
+        // Play sound (no effect)
         SoundManager.play('notification');
 
         // Reset cooldown after 2 seconds
@@ -1878,16 +1844,16 @@ const QuickChat = {
     showPopup(playerColor, message) {
         console.log(`💭 Showing popup for ${playerColor}: ${message}`);
         console.log(`👑 Looking for ${playerColor} king (${playerColor === 'Blue' ? 'P' : 'R'}) on the board`);
-        
+
         // Debug: Check if board exists
         if (!gameState.board) {
             console.error('❌ gameState.board is null/undefined');
             console.log('🎮 Current gameState:', gameState);
             return;
         }
-        
+
         console.log('📋 Current board state:', gameState.board);
-        
+
         // Find the king piece for the player
         const kingPiece = playerColor === 'Blue' ? 'P' : 'R';
         let kingPosition = null;
@@ -1914,7 +1880,7 @@ const QuickChat = {
                     }
                 }
             }
-            
+
             // Fallback: Show popup in center of screen
             console.log('🔄 Using fallback popup positioning');
             this.showFallbackPopup(playerColor, message);
@@ -1924,7 +1890,7 @@ const QuickChat = {
         // Convert to display coordinates
         const [displayRow, displayCol] = getDisplayCoordinates(kingPosition[0], kingPosition[1]);
         console.log(`📍 Display coordinates: [${displayRow}, ${displayCol}]`);
-        
+
         // Find the king square element
         const kingSquare = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
         if (!kingSquare) {
@@ -1967,7 +1933,7 @@ const QuickChat = {
 
     showFallbackPopup(playerColor, message) {
         console.log(`🔄 Showing fallback popup for ${playerColor}: ${message}`);
-        
+
         // Create popup element
         const popup = document.createElement('div');
         popup.className = 'chat-popup fallback-popup';
@@ -1999,16 +1965,16 @@ socket.on('quickChat', ({ player, type, value }) => {
     console.log(`📥 Received quick chat from ${player}: ${value}`);
     console.log(`🎯 My color: ${gameState.playerColor}, Sender: ${player}`);
     console.log(`📍 Will show popup on ${player}'s king for both players to see`);
-    
+
     // Show popup on the SENDER's king (so both players see it on the same king)
     QuickChat.showPopup(player, value);
-    SoundManager.play('notification');
+    SoundManager.play('notification'); // No sound effect
 });
 
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎮 Game initializing...');
-    
+
     // Check if all required elements exist
     const missingElements = [];
     Object.entries(elements).forEach(([key, element]) => {
@@ -2016,25 +1982,25 @@ document.addEventListener('DOMContentLoaded', () => {
             missingElements.push(key);
         }
     });
-    
+
     if (missingElements.length > 0) {
         console.warn('⚠️ Missing DOM elements:', missingElements);
     } else {
         console.log('✅ All DOM elements found');
     }
-    
-    // Initialize sound system
+
+    // Initialize sound system (disabled)
     SoundManager.init();
-    
+
     // Initialize quick chat system
     QuickChat.init();
-    
+
     // Show quick chat button for testing
     if (elements.quickChatBtn) {
         elements.quickChatBtn.classList.add('visible');
         console.log('💬 Quick chat button shown for testing');
     }
-    
+
     showScreen('mainMenu');
     console.log('🏠 Main menu displayed');
 
