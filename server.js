@@ -383,22 +383,20 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle chat messages
-    socket.on('sendMessage', ({ roomId, message }) => {
+    // Handle quick chat
+    socket.on('quickChat', ({ roomId, player, type, value }) => {
         const room = rooms.get(roomId);
         if (!room) return;
 
-        const player = room.players.find(p => p.id === socket.id);
-        if (!player) return;
+        const senderPlayer = room.players.find(p => p.id === socket.id);
+        if (!senderPlayer) return;
 
-        const chatMessage = {
-            player: player.color,
-            message: message,
-            timestamp: Date.now()
-        };
-
-        // Broadcast message to all players in the room
-        io.to(roomId).emit('newMessage', chatMessage);
+        // Broadcast quick chat to ALL players in the room (including sender for consistency)
+        io.to(roomId).emit('quickChat', {
+            player: player,
+            type: type,
+            value: value
+        });
     });
 
     // Handle player ready
@@ -606,7 +604,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`🏯 Khmer Checkers server running on port ${PORT}`);
 });

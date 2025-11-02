@@ -37,7 +37,7 @@ let gameState = {
 const SoundManager = {
     sounds: {},
     enabled: true,
-    volume: 0.7,
+    volume: 0.15, // Much quieter
     audioContext: null,
     
     init() {
@@ -62,15 +62,15 @@ const SoundManager = {
     generateSounds() {
         if (!this.audioContext) return;
         
-        // Create different sound effects
-        this.sounds.clickBuffer = this.createToneBuffer(800, 0.1, 0.05);
-        this.sounds.moveBuffer = this.createSweepBuffer(400, 600, 0.3, 0.2);
-        this.sounds.captureBuffer = this.createSweepBuffer(600, 300, 0.5, 0.3);
-        this.sounds.winBuffer = this.createChordBuffer([523, 659, 784, 1047], 1, 0.8);
-        this.sounds.loseBuffer = this.createSweepBuffer(300, 150, 0.8, 0.6);
-        this.sounds.notificationBuffer = this.createToneBuffer(1000, 0.2, 0.1);
-        this.sounds.errorBuffer = this.createNoiseBuffer(200, 0.3, 0.2);
-        this.sounds.joinBuffer = this.createSweepBuffer(400, 800, 0.4, 0.3);
+        // Create softer, smoother sound effects
+        this.sounds.clickBuffer = this.createToneBuffer(600, 0.08, 0.15); // Softer click
+        this.sounds.moveBuffer = this.createSweepBuffer(350, 450, 0.2, 0.3); // Gentle move
+        this.sounds.captureBuffer = this.createSweepBuffer(500, 250, 0.25, 0.4); // Subtle capture
+        this.sounds.winBuffer = this.createChordBuffer([440, 554, 659], 0.6, 0.5); // Gentle win
+        this.sounds.loseBuffer = this.createSweepBuffer(250, 150, 0.4, 0.5); // Soft lose
+        this.sounds.notificationBuffer = this.createToneBuffer(700, 0.12, 0.2); // Gentle notification
+        this.sounds.errorBuffer = this.createToneBuffer(300, 0.15, 0.3); // Soft error tone
+        this.sounds.joinBuffer = this.createSweepBuffer(350, 500, 0.25, 0.4); // Pleasant join
     },
     
     createToneBuffer(frequency, duration, decay) {
@@ -238,14 +238,17 @@ const elements = {
     playAgainBtn: document.getElementById('playAgainBtn'),
     exitGameBtn: document.getElementById('exitGameBtn'),
     
+    // Missing elements that need to be handled
+    acceptRestartBtn: document.getElementById('acceptRestartBtn'),
+    declineRestartBtn: document.getElementById('declineRestartBtn'),
+    
     // Room list
     refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
     roomList: document.getElementById('roomList'),
     
-    // Chat system
-    chatMessages: document.getElementById('chatMessages'),
-    messageInput: document.getElementById('messageInput'),
-    sendMessageBtn: document.getElementById('sendMessageBtn')
+    // Quick chat system
+    quickChatBtn: document.getElementById('quickChatBtn'),
+    quickChatMenu: document.getElementById('quickChatMenu')
 };
 
 // Utility functions
@@ -631,12 +634,13 @@ const hideGameOverModal = () => {
 };
 
 const showRestartRequestModal = (requesterName) => {
-    elements.restartRequestMessage.textContent = `${requesterName} wants to restart the game. Do you agree?`;
-    elements.restartRequestModal.classList.add('active');
+    // For now, just show a notification since the modal doesn't exist in HTML
+    showNotification(`${requesterName} wants to restart the game`, 'info');
 };
 
 const hideRestartRequestModal = () => {
-    elements.restartRequestModal.classList.remove('active');
+    // Function exists for compatibility but modal doesn't exist in HTML
+    console.log('Restart request modal hidden');
 };
 
 // Timer Functions
@@ -783,6 +787,7 @@ window.joinRoomFromList = (roomId) => {
 
 // Create Room Modal
 elements.createRoomBtn.addEventListener('click', () => {
+    console.log('🏠 Create room button clicked!');
     SoundManager.play('click');
     elements.roomSettingsModal.style.display = 'flex';
 });
@@ -807,6 +812,7 @@ elements.closeSettingsModal.addEventListener('click', () => {
 
 // Join Room Modal
 elements.joinRoomBtn.addEventListener('click', () => {
+    console.log('🚪 Join room button clicked!');
     SoundManager.play('click');
     elements.joinRoomModal.style.display = 'flex';
     elements.roomInput.focus();
@@ -834,6 +840,7 @@ elements.closeJoinModal.addEventListener('click', () => {
 
 // Public Rooms Modal
 elements.publicRoomsBtn.addEventListener('click', () => {
+    console.log('🌍 Public rooms button clicked!');
     SoundManager.play('click');
     elements.publicRoomsModal.style.display = 'flex';
     refreshRoomList();
@@ -898,6 +905,12 @@ elements.playWithBotBtn.addEventListener('click', () => {
     elements.gameStartControls.style.display = 'none';
     elements.gameplayControls.style.display = 'block';
     elements.exitBotGameBtn.style.display = 'inline-block';
+    
+    // Show quick chat for testing (normally hidden for bot games)
+    if (elements.quickChatBtn) {
+        elements.quickChatBtn.classList.add('visible');
+        console.log('💬 Quick chat button shown for bot game (testing)');
+    }
 
     showNotification('Bot game started! You play as Blue.', 'info');
 });
@@ -929,7 +942,7 @@ elements.requestRestartBtn.addEventListener('click', () => {
         // Request restart from opponent
         socket.emit('requestRestart', { roomId: gameState.roomId });
         elements.requestRestartBtn.disabled = true;
-        elements.requestRestartBtn.textContent = '⏳ Requesting...';
+        elements.requestRestartBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Requesting...</span>';
         showNotification('Restart request sent to opponent', 'info');
     }
 });
@@ -937,6 +950,12 @@ elements.requestRestartBtn.addEventListener('click', () => {
 elements.exitBotGameBtn.addEventListener('click', () => {
     // Exit bot game and return to main menu
     showScreen('mainMenu');
+    
+    // Hide quick chat
+    if (elements.quickChatBtn) {
+        elements.quickChatBtn.style.display = 'none';
+    }
+    
     gameState = {
         roomId: null,
         playerColor: null,
@@ -973,6 +992,12 @@ elements.exitGameBtn.addEventListener('click', () => {
         // Exit bot game directly
         hideGameOverModal();
         showScreen('mainMenu');
+        
+        // Hide quick chat
+        if (elements.quickChatBtn) {
+            elements.quickChatBtn.style.display = 'none';
+        }
+        
         gameState = {
             roomId: null,
             playerColor: null,
@@ -1013,64 +1038,24 @@ elements.copyRoomBtn.addEventListener('click', () => {
     });
 });
 
-elements.sendMessageBtn.addEventListener('click', () => {
-    sendMessage();
-});
+// Quick chat initialization is handled in QuickChat.init()
 
-elements.messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
+// Handle restart request modal buttons (if they exist)
+if (elements.acceptRestartBtn) {
+    elements.acceptRestartBtn.addEventListener('click', () => {
+        socket.emit('restartResponse', { roomId: gameState.roomId, accepted: true });
+        hideRestartRequestModal();
+    });
+}
 
-elements.acceptRestartBtn.addEventListener('click', () => {
-    socket.emit('restartResponse', { roomId: gameState.roomId, accepted: true });
-    hideRestartRequestModal();
-});
+if (elements.declineRestartBtn) {
+    elements.declineRestartBtn.addEventListener('click', () => {
+        socket.emit('restartResponse', { roomId: gameState.roomId, accepted: false });
+        hideRestartRequestModal();
+    });
+}
 
-elements.declineRestartBtn.addEventListener('click', () => {
-    socket.emit('restartResponse', { roomId: gameState.roomId, accepted: false });
-    hideRestartRequestModal();
-});
-
-elements.exitBotGameBtn.addEventListener('click', () => {
-    // Exit bot game and return to main menu
-    showScreen('mainMenu');
-    gameState = {
-        roomId: null,
-        playerColor: null,
-        playerPiece: null,
-        currentPlayer: 'Blue',
-        board: [],
-        selectedSquare: null,
-        gameStarted: false,
-        lastMove: null,
-        isBot: false
-    };
-    showNotification('Returned to main menu', 'info');
-});
-
-// Chat System
-const sendMessage = () => {
-    const message = elements.messageInput.value.trim();
-    if (message && gameState.roomId && !gameState.isBot) {
-        SoundManager.play('notification');
-        socket.emit('sendMessage', {
-            roomId: gameState.roomId,
-            message: message
-        });
-        elements.messageInput.value = '';
-    }
-};
-
-const addChatMessage = (player, message) => {
-    const messageElement = document.createElement('div');
-    messageElement.className = `chat-message ${player.toLowerCase()}`;
-    messageElement.textContent = `${player}: ${message}`;
-    
-    elements.chatMessages.appendChild(messageElement);
-    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
-};
+// Duplicate QuickChat code removed - using the complete version below
 
 // Bot AI Logic
 const botAI = {
@@ -1484,27 +1469,9 @@ const restartBotGame = () => {
     showNotification('Bot game restarted!', 'info');
 };
 
-// Initialize chat system
-const initializeChat = () => {
-    // Send message button
-    elements.sendMessageBtn.addEventListener('click', () => {
-        if (gameState.isBot) {
-            showNotification('Chat only available in multiplayer games!', 'error');
-            return;
-        }
-        sendMessage();
-    });
-    
-    // Enter key to send message
-    elements.messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            if (gameState.isBot) {
-                showNotification('Chat only available in multiplayer games!', 'error');
-                return;
-            }
-            sendMessage();
-        }
-    });
+// Initialize quick chat system
+const initializeQuickChat = () => {
+    QuickChat.init();
 };
 
 
@@ -1568,7 +1535,105 @@ socket.on('gameStartCountdown', ({ count }) => {
 
 
 
-// Removed old chat message handler
+// Socket event handlers for game functionality
+socket.on('startGame', ({ board, currentPlayer, players }) => {
+    gameState.gameStarted = true;
+    gameState.currentPlayer = currentPlayer;
+    updateBoard(board);
+    updateTurnIndicator(currentPlayer);
+
+    elements.gameStartCountdown.style.display = 'none';
+    elements.gameplayControls.style.display = 'block';
+    
+    // Show quick chat for multiplayer games
+    if (elements.quickChatBtn && !gameState.isBot) {
+        elements.quickChatBtn.classList.add('visible');
+        console.log('💬 Quick chat button shown for multiplayer game');
+    }
+
+    showNotification('Game started! May the best strategist win!', 'info');
+});
+
+socket.on('updateBoard', ({ board, currentPlayer, lastMove }) => {
+    gameState.currentPlayer = currentPlayer;
+    updateBoard(board);
+    updateTurnIndicator(currentPlayer);
+
+    if (lastMove) {
+        highlightLastMove(lastMove.from, lastMove.to);
+    }
+});
+
+socket.on('gameOver', ({ winner, board, lastMove }) => {
+    gameState.gameStarted = false;
+    updateBoard(board);
+
+    if (lastMove) {
+        highlightLastMove(lastMove.from, lastMove.to);
+    }
+
+    elements.gameplayControls.style.display = 'none';
+    showGameOverModal(winner);
+});
+
+socket.on('restartGame', ({ board, currentPlayer }) => {
+    gameState.gameStarted = true;
+    gameState.currentPlayer = currentPlayer;
+    gameState.lastMove = null;
+
+    updateBoard(board);
+    updateTurnIndicator(currentPlayer);
+    clearSelection();
+    clearMoveHighlights();
+
+    elements.gameplayControls.style.display = 'block';
+    elements.requestRestartBtn.disabled = false;
+    elements.requestRestartBtn.textContent = '🔄 RESTART';
+
+    hideGameOverModal();
+    showNotification('Game restarted! Good luck!', 'info');
+});
+
+socket.on('playerDisconnected', () => {
+    showNotification('Opponent disconnected', 'error');
+    elements.statusMessage.textContent = 'Opponent disconnected. Waiting for reconnection...';
+    gameState.gameStarted = false;
+    elements.gameplayControls.style.display = 'none';
+    elements.waitingControls.style.display = 'block';
+});
+
+socket.on('endSession', () => {
+    showScreen('mainMenu');
+    
+    // Hide quick chat
+    if (elements.quickChatBtn) {
+        elements.quickChatBtn.style.display = 'none';
+    }
+    
+    gameState = {
+        roomId: null,
+        playerColor: null,
+        playerPiece: null,
+        currentPlayer: 'Blue',
+        board: [],
+        selectedSquare: null,
+        gameStarted: false,
+        lastMove: null,
+        isBot: false
+    };
+
+    showNotification('Game session ended', 'info');
+});
+
+socket.on('roomFull', () => {
+    showScreen('mainMenu');
+    showNotification('Room is full!', 'error');
+});
+
+socket.on('roomNotFound', () => {
+    showScreen('mainMenu');
+    showNotification('Room not found!', 'error');
+});
 
 socket.on('roomList', (rooms) => {
     displayRoomList(rooms);
@@ -1615,20 +1680,363 @@ socket.on('exitedLobby', () => {
     showNotification('Left the lobby', 'info');
 });
 
-// Socket event for chat messages
-socket.on('newMessage', ({ player, message }) => {
-    addChatMessage(player, message);
+// Quick Chat System
+let quickChatCooldown = false;
+
+const QuickChat = {
+    init() {
+        console.log('🎭 Initializing QuickChat system...');
+        
+        if (!elements.quickChatBtn) {
+            console.error('❌ Quick chat button not found!');
+            return;
+        }
+
+        // Toggle quick chat menu
+        elements.quickChatBtn.addEventListener('click', (e) => {
+            console.log('💬 Quick chat button clicked!');
+            e.stopPropagation();
+            this.toggleMenu();
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (elements.quickChatMenu && 
+                !elements.quickChatMenu.contains(e.target) && 
+                !elements.quickChatBtn.contains(e.target)) {
+                this.closeMenu();
+            }
+        });
+
+        // Handle emoji and text buttons
+        this.setupChatButtons();
+        
+        // Test the button immediately
+        setTimeout(() => {
+            this.testButton();
+        }, 1000);
+        
+        console.log('✅ QuickChat initialized successfully');
+        
+        // Add global test functions for debugging
+        window.testPopup = (color, message) => {
+            console.log(`🧪 Testing popup: ${color} - ${message}`);
+            this.showPopup(color || 'Blue', message || 'Test Message');
+        };
+        
+        window.testSimplePopup = (message) => {
+            console.log(`🧪 Testing simple popup: ${message}`);
+            const popup = document.createElement('div');
+            popup.className = 'chat-popup';
+            popup.textContent = message || 'Simple Test!';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(212, 175, 55, 0.95);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 25px;
+                border: 3px solid #d4af37;
+                font-size: 1.3rem;
+                font-weight: bold;
+                z-index: 9999;
+                animation: popupBounce 1.5s ease-out forwards;
+            `;
+            document.body.appendChild(popup);
+            setTimeout(() => {
+                if (popup.parentNode) popup.parentNode.removeChild(popup);
+            }, 1500);
+        };
+        
+        console.log('🧪 Test functions added:');
+        console.log('  - testPopup("Blue", "Test!")');
+        console.log('  - testSimplePopup("Hello!")');
+    },
+
+    testButton() {
+        if (elements.quickChatBtn) {
+            console.log('🧪 Testing quick chat button visibility...');
+            const rect = elements.quickChatBtn.getBoundingClientRect();
+            console.log('📍 Button position:', rect);
+            console.log('👁️ Button visible:', elements.quickChatBtn.offsetParent !== null);
+            console.log('🎨 Button styles:', window.getComputedStyle(elements.quickChatBtn).display);
+        }
+    },
+
+    setupChatButtons() {
+        // Wait for DOM to be ready, then setup buttons
+        setTimeout(() => {
+            const chatButtons = document.querySelectorAll('.emoji-btn, .text-btn');
+            console.log(`🔘 Found ${chatButtons.length} chat buttons`);
+            
+            chatButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    console.log('🎯 Chat button clicked:', btn.dataset.value);
+                    e.stopPropagation();
+                    const type = btn.dataset.type;
+                    const value = btn.dataset.value;
+                    this.sendQuickChat(type, value);
+                });
+            });
+        }, 100);
+    },
+
+    toggleMenu() {
+        if (!elements.quickChatMenu) {
+            console.error('❌ Quick chat menu not found!');
+            return;
+        }
+
+        const isVisible = elements.quickChatMenu.style.display === 'block';
+        elements.quickChatMenu.style.display = isVisible ? 'none' : 'block';
+        
+        if (!isVisible) {
+            SoundManager.play('click');
+            console.log('📖 Quick chat menu opened');
+        } else {
+            console.log('📕 Quick chat menu closed');
+        }
+    },
+
+    closeMenu() {
+        if (elements.quickChatMenu) {
+            elements.quickChatMenu.style.display = 'none';
+        }
+    },
+
+    sendQuickChat(type, value) {
+        console.log(`📤 Sending quick chat: ${type} - ${value}`);
+        
+        if (quickChatCooldown) {
+            showNotification('Please wait before sending another message', 'error');
+            return;
+        }
+
+        if (gameState.isBot) {
+            // For testing: allow quick chat in bot games to test popup system
+            console.log('🤖 Bot game: Testing popup on your king');
+            this.showPopup(gameState.playerColor, value);
+            this.closeMenu();
+            SoundManager.play('notification');
+            
+            // Start cooldown
+            quickChatCooldown = true;
+            this.updateButtonStates(true);
+            setTimeout(() => {
+                quickChatCooldown = false;
+                this.updateButtonStates(false);
+            }, 2000);
+            return;
+        }
+
+        if (!gameState.roomId || !gameState.playerColor) {
+            showNotification('Join a game first!', 'error');
+            return;
+        }
+
+        // Start cooldown
+        quickChatCooldown = true;
+        this.updateButtonStates(true);
+
+        // Send to server (server will broadcast to ALL players including sender)
+        socket.emit('quickChat', {
+            roomId: gameState.roomId,
+            player: gameState.playerColor,
+            type: type,
+            value: value
+        });
+
+        // Don't show popup locally - let the server broadcast handle it for consistency
+
+        // Close menu
+        this.closeMenu();
+
+        // Play sound
+        SoundManager.play('notification');
+
+        // Reset cooldown after 2 seconds
+        setTimeout(() => {
+            quickChatCooldown = false;
+            this.updateButtonStates(false);
+            console.log('⏰ Quick chat cooldown reset');
+        }, 2000);
+    },
+
+    updateButtonStates(disabled) {
+        document.querySelectorAll('.emoji-btn, .text-btn').forEach(btn => {
+            btn.disabled = disabled;
+            if (disabled) {
+                btn.style.opacity = '0.5';
+            } else {
+                btn.style.opacity = '1';
+            }
+        });
+    },
+
+    showPopup(playerColor, message) {
+        console.log(`💭 Showing popup for ${playerColor}: ${message}`);
+        console.log(`👑 Looking for ${playerColor} king (${playerColor === 'Blue' ? 'P' : 'R'}) on the board`);
+        
+        // Debug: Check if board exists
+        if (!gameState.board) {
+            console.error('❌ gameState.board is null/undefined');
+            console.log('🎮 Current gameState:', gameState);
+            return;
+        }
+        
+        console.log('📋 Current board state:', gameState.board);
+        
+        // Find the king piece for the player
+        const kingPiece = playerColor === 'Blue' ? 'P' : 'R';
+        let kingPosition = null;
+
+        // Find king position on the board
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (gameState.board[row] && gameState.board[row][col] === kingPiece) {
+                    kingPosition = [row, col];
+                    console.log(`👑 Found ${playerColor} king at position [${row}, ${col}]`);
+                    break;
+                }
+            }
+            if (kingPosition) break;
+        }
+
+        if (!kingPosition) {
+            console.warn(`⚠️ ${playerColor} king (${kingPiece}) not found on board`);
+            console.log('🔍 Available pieces on board:');
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (gameState.board[row] && gameState.board[row][col] !== 'H') {
+                        console.log(`  - [${row},${col}]: ${gameState.board[row][col]}`);
+                    }
+                }
+            }
+            
+            // Fallback: Show popup in center of screen
+            console.log('🔄 Using fallback popup positioning');
+            this.showFallbackPopup(playerColor, message);
+            return;
+        }
+
+        // Convert to display coordinates
+        const [displayRow, displayCol] = getDisplayCoordinates(kingPosition[0], kingPosition[1]);
+        console.log(`📍 Display coordinates: [${displayRow}, ${displayCol}]`);
+        
+        // Find the king square element
+        const kingSquare = document.querySelector(`[data-row="${displayRow}"][data-col="${displayCol}"]`);
+        if (!kingSquare) {
+            console.warn(`⚠️ King square element not found at [${displayRow}, ${displayCol}]`);
+            console.log('🔍 Available squares:');
+            document.querySelectorAll('[data-row][data-col]').forEach(square => {
+                console.log(`  - Square [${square.dataset.row}, ${square.dataset.col}]`);
+            });
+            return;
+        }
+
+        console.log('✅ King square found, creating popup...');
+
+        // Create popup element
+        const popup = document.createElement('div');
+        popup.className = 'chat-popup';
+        popup.textContent = message;
+
+        // Position popup above the king
+        const rect = kingSquare.getBoundingClientRect();
+        popup.style.position = 'fixed';
+        popup.style.left = `${rect.left + rect.width / 2}px`;
+        popup.style.top = `${rect.top - 10}px`;
+        popup.style.transform = 'translateX(-50%)';
+        popup.style.zIndex = '9999';
+
+        console.log(`📍 Popup positioned at: left=${popup.style.left}, top=${popup.style.top}`);
+
+        document.body.appendChild(popup);
+        console.log('✅ Popup added to DOM');
+
+        // Remove popup after animation
+        setTimeout(() => {
+            if (popup.parentNode) {
+                popup.parentNode.removeChild(popup);
+                console.log('🗑️ Popup removed from DOM');
+            }
+        }, 1500);
+    },
+
+    showFallbackPopup(playerColor, message) {
+        console.log(`🔄 Showing fallback popup for ${playerColor}: ${message}`);
+        
+        // Create popup element
+        const popup = document.createElement('div');
+        popup.className = 'chat-popup fallback-popup';
+        popup.innerHTML = `<strong>${playerColor}:</strong> ${message}`;
+
+        // Position popup in center of screen
+        popup.style.position = 'fixed';
+        popup.style.left = '50%';
+        popup.style.top = '30%';
+        popup.style.transform = 'translateX(-50%)';
+        popup.style.zIndex = '9999';
+        popup.style.background = playerColor === 'Blue' ? 'rgba(78, 205, 196, 0.95)' : 'rgba(255, 107, 107, 0.95)';
+
+        document.body.appendChild(popup);
+        console.log('✅ Fallback popup added to DOM');
+
+        // Remove popup after animation
+        setTimeout(() => {
+            if (popup.parentNode) {
+                popup.parentNode.removeChild(popup);
+                console.log('🗑️ Fallback popup removed from DOM');
+            }
+        }, 1500);
+    }
+};
+
+// Socket event for quick chat
+socket.on('quickChat', ({ player, type, value }) => {
+    console.log(`📥 Received quick chat from ${player}: ${value}`);
+    console.log(`🎯 My color: ${gameState.playerColor}, Sender: ${player}`);
+    console.log(`📍 Will show popup on ${player}'s king for both players to see`);
+    
+    // Show popup on the SENDER's king (so both players see it on the same king)
+    QuickChat.showPopup(player, value);
+    SoundManager.play('notification');
 });
 
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎮 Game initializing...');
+    
+    // Check if all required elements exist
+    const missingElements = [];
+    Object.entries(elements).forEach(([key, element]) => {
+        if (!element) {
+            missingElements.push(key);
+        }
+    });
+    
+    if (missingElements.length > 0) {
+        console.warn('⚠️ Missing DOM elements:', missingElements);
+    } else {
+        console.log('✅ All DOM elements found');
+    }
+    
     // Initialize sound system
     SoundManager.init();
     
-    // Initialize chat system
-    initializeChat();
+    // Initialize quick chat system
+    QuickChat.init();
+    
+    // Show quick chat button for testing
+    if (elements.quickChatBtn) {
+        elements.quickChatBtn.classList.add('visible');
+        console.log('💬 Quick chat button shown for testing');
+    }
     
     showScreen('mainMenu');
+    console.log('🏠 Main menu displayed');
 
     // Load room list when page loads
     setTimeout(() => {

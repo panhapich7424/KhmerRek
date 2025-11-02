@@ -45,7 +45,7 @@ npm start
 ```
 
 4. **Open your browser**
-Navigate to `http://localhost:3000`
+Navigate to `http://localhost:3001`
 
 ### Development Mode
 ```bash
@@ -111,7 +111,7 @@ khmer-checkers/
 To play on your local network:
 1. Find your local IP address
 2. Start the server: `npm start`
-3. Share `http://YOUR_IP:3000` with other players
+3. Share `http://YOUR_IP:3001` with other players
 
 ## 🎨 Theme & Visual Design
 

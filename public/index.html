@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏯 Khmer Rek - Temple of Strategy</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏯</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Koulen&family=Preahvihear&display=swap" rel="stylesheet">
@@ -195,19 +197,70 @@
             </div>
         </div>
 
-        <!-- Chat Box -->
-        <div class="chat-container">
-            <div class="chat-header">
-                <h3>Room Chat</h3>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <!-- Messages will appear here -->
-            </div>
-            <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="Type your message..." maxlength="100">
-                <button id="sendMessageBtn">Send</button>
+        <!-- Quick Chat System -->
+        <div class="quick-chat-container">
+            <button id="quickChatBtn" class="quick-chat-btn" title="Quick Chat" style="display: none;">
+                <span class="chat-icon">💬</span>
+                <span class="chat-pulse"></span>
+            </button>
+
+            <!-- Quick Chat Menu -->
+            <div id="quickChatMenu" class="quick-chat-menu" style="display: none;">
+                <div class="quick-chat-header">
+                    <span class="header-icon">💭</span>
+                    Quick Chat
+                </div>
+
+                <!-- Emojis -->
+                <div class="emoji-section">
+                    <div class="section-title">Reactions</div>
+                    <div class="emoji-grid">
+                        <button class="emoji-btn" data-type="emoji" data-value="😢" title="Cry">
+                            <span class="emoji">😢</span>
+                        </button>
+                        <button class="emoji-btn" data-type="emoji" data-value="😂" title="Laugh">
+                            <span class="emoji">😂</span>
+                        </button>
+                        <button class="emoji-btn" data-type="emoji" data-value="😮" title="Wow">
+                            <span class="emoji">😮</span>
+                        </button>
+                        <button class="emoji-btn" data-type="emoji" data-value="🤓" title="Smart">
+                            <span class="emoji">🤓</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Khmer Text -->
+                <div class="text-section">
+                    <div class="section-title">Khmer Messages</div>
+                    <div class="text-grid">
+                        <button class="text-btn" data-type="text" data-value="ចុះចាញ់ទៅពៅ!" title="Give up!">
+                            <span class="text-content">ចុះចាញ់ទៅពៅ!</span>
+                        </button>
+                        <button class="text-btn" data-type="text" data-value="កាក់ណាស់!" title="So funny!">
+                            <span class="text-content">កាក់ណាស់!</span>
+                        </button>
+                        <button class="text-btn" data-type="text" data-value="កុំយំណា!!" title="Don't cry!">
+                            <span class="text-content">កុំយំណា!!</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Test Button -->
+                <div class="quick-chat-footer">
+                    <small>Click to send • 2s cooldown</small>
+                    <button class="test-popup-btn" onclick="testSimplePopup('🧪 Test Popup Works!')"
+                        style="margin-top: 0.5rem; padding: 0.5rem; background: #d4af37; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8rem; width: 100%;">🧪
+                        Test Popup</button>
+                </div>
             </div>
         </div>
+
+        <div class="quick-chat-footer">
+            <small>Click to send • 2s cooldown</small>
+        </div>
+    </div>
+    </div>
     </div>
 
     <!-- Game Over Modal -->

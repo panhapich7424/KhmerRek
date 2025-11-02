@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Chat Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #2a2d3a 100%);
+            color: white;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .test-button {
+            background: linear-gradient(145deg, #d4af37, #b8860b);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 1rem;
+            font-size: 1rem;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            border: 1px solid #d4af37;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 Quick Chat System Test</h1>
+        
+        <div class="status">
+            <h3>🐛 Debug Status:</h3>
+            <p id="status">Ready for debugging!</p>
+            <p><strong>Added enhanced debugging to find why popup doesn't show</strong></p>
+        </div>
+        
+        <div class="status">
+            <h3>🧪 Debug Steps:</h3>
+            <ol>
+                <li>Open main game → Start single player (bot game)</li>
+                <li>Open browser console (F12)</li>
+                <li>Click quick chat button (💬) and try sending a message</li>
+                <li>Check console for detailed debug logs</li>
+                <li><strong>Alternative:</strong> Type <code>testPopup("Blue", "Test!")</code> in console</li>
+            </ol>
+        </div>
+        
+        <div>
+            <h3>Test Actions:</h3>
+            <button class="test-button" onclick="testQuickChatButton()">Test Quick Chat Button</button>
+            <button class="test-button" onclick="testPopup()">Test Popup Animation</button>
+            <button class="test-button" onclick="openGame()">Open Main Game</button>
+        </div>
+        
+        <div class="status">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>✅ <strong>JavaScript Error Fixed</strong> - Removed duplicate quickChatCooldown declaration</li>
+                <li>✅ <strong>Favicon Added</strong> - No more 404 errors</li>
+                <li>Click "Open Main Game" to go to the actual game</li>
+                <li>Start a single player game (vs AI)</li>
+                <li>Look for the 💬 button in the bottom-right corner</li>
+                <li>Click it to open the quick chat menu</li>
+                <li>Try clicking the emojis and Khmer text</li>
+            </ol>
+        </div>
+        
+        <div class="status">
+            <h3>Expected Behavior (UPDATED):</h3>
+            <ul>
+                <li>✅ Quick chat button should appear in bottom-right</li>
+                <li>✅ Clicking button should open menu with emojis and text</li>
+                <li>🔄 <strong>NEW:</strong> When Player 1 sends message → Shows on Player 1's king</li>
+                <li>🔄 <strong>NEW:</strong> Player 2 also sees the message on Player 1's king</li>
+                <li>🔄 <strong>NEW:</strong> Both players see messages on the SENDER's king</li>
+                <li>✅ 2-second cooldown between messages</li>
+                <li>✅ Smooth animations and hover effects</li>
+            </ul>
+        </div>
+        
+        <div class="status">
+            <h3>🎯 Communication Flow:</h3>
+            <ol>
+                <li><strong>Player 1 (Blue)</strong> clicks "កាក់ណាស់!" → Popup appears on Blue king</li>
+                <li><strong>Player 2 (Red)</strong> sees the same popup on Blue king</li>
+                <li><strong>Player 2 (Red)</strong> clicks "😂" → Popup appears on Red king</li>
+                <li><strong>Player 1 (Blue)</strong> sees the emoji popup on Red king</li>
+                <li>Both players can communicate by seeing messages on the sender's king!</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function testQuickChatButton() {
+            document.getElementById('status').innerHTML = 'Testing quick chat button... Check console for logs.';
+            console.log('🧪 Testing quick chat button functionality');
+            
+            // Simulate what happens in the game
+            const testBtn = document.createElement('button');
+            testBtn.innerHTML = '💬';
+            testBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                background: linear-gradient(145deg, #d4af37, #b8860b);
+                border: 3px solid #ffffff;
+                color: white;
+                font-size: 2rem;
+                cursor: pointer;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            testBtn.onclick = () => {
+                alert('Quick chat button clicked! ✅');
+                testBtn.remove();
+            };
+            
+            document.body.appendChild(testBtn);
+            
+            setTimeout(() => {
+                if (document.body.contains(testBtn)) {
+                    testBtn.remove();
+                }
+            }, 5000);
+        }
+        
+        function testPopup() {
+            document.getElementById('status').innerHTML = 'Testing popup animation...';
+            
+            const popup = document.createElement('div');
+            popup.textContent = 'កាក់ណាស់! 😂';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 25px;
+                border: 3px solid #d4af37;
+                font-size: 1.3rem;
+                font-weight: bold;
+                z-index: 9999;
+                animation: popupTest 2s ease-out forwards;
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes popupTest {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+                    15% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+                    30% { transform: translate(-50%, -50%) scale(1); }
+                    85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                if (document.body.contains(popup)) {
+                    popup.remove();
+                }
+                style.remove();
+                document.getElementById('status').innerHTML = 'Popup test completed! ✅';
+            }, 2000);
+        }
+        
+        function openGame() {
+            window.location.href = '/';
+        }
+        
+        // Initialize
+        document.getElementById('status').innerHTML = 'Ready for testing! 🚀';
+    </script>
+</body>
+</html>
