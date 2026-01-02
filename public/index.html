@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏯 Khmer Rek - Temple of Strategy</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏯</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Koulen&family=Preahvihear&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Background particles -->
+    <div class="particles"></div>
+
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen active">
+        <div class="among-us-bg">
+            <div class="stars"></div>
+            <div class="planets"></div>
+        </div>
+
+        <div class="main-header">
+            <h1 class="game-title">រែកខ្មែរ168</h1>
+            <div class="game-subtitle">Strategic Board Game</div>
+        </div>
+
+        <div class="menu-panel">
+            <div class="menu-buttons">
+                <button id="playWithBotBtn" class="menu-btn bot-btn">
+                    <div class="btn-icon"><i class="fas fa-gamepad"></i></div>
+                    <div class="btn-content">
+                        <div class="btn-title">STANDALONE</div>
+                        <div class="btn-subtitle">Play Offline</div>
+                    </div>
+                </button>
+
+                <button id="createRoomBtn" class="menu-btn create-btn">
+                    <div class="btn-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="btn-content">
+                        <div class="btn-title">CREATE ROOM</div>
+                        <div class="btn-subtitle">Play with Friends</div>
+                    </div>
+                </button>
+
+                <button id="joinRoomBtn" class="menu-btn join-btn">
+                    <div class="btn-icon"><i class="fas fa-sign-in-alt"></i></div>
+                    <div class="btn-content">
+                        <div class="btn-title">JOIN ROOM</div>
+                        <div class="btn-subtitle">Enter Room Code</div>
+                    </div>
+                </button>
+
+                <button id="publicRoomsBtn" class="menu-btn public-btn">
+                    <div class="btn-icon"><i class="fas fa-globe"></i></div>
+                    <div class="btn-content">
+                        <div class="btn-title">PUBLIC ROOMS</div>
+                        <div class="btn-subtitle">Browse Available Games</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Join Room Modal -->
+        <div id="joinRoomModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>JOIN ROOM</h3>
+                    <button id="closeJoinModal" class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-container">
+                        <label>Room Code</label>
+                        <input type="text" id="roomInput" placeholder="Enter 6-digit code" maxlength="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmJoinBtn" class="confirm-btn"><i class="fas fa-check"></i> JOIN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Public Rooms Modal -->
+        <div id="publicRoomsModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>PUBLIC ROOMS</h3>
+                    <button id="closePublicModal" class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="room-list-container">
+                        <button id="refreshRoomsBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> REFRESH</button>
+                        <div id="roomList" class="room-list">
+                            <div class="loading-rooms">Loading rooms...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Settings Modal -->
+        <div id="roomSettingsModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>ROOM SETTINGS</h3>
+                    <button id="closeSettingsModal" class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="room-settings">
+                        <div class="setting-section">
+                            <h4 class="setting-section-title">Room Type</h4>
+                            <label class="room-setting">
+                                <input type="radio" name="roomType" value="public" checked>
+                                <div class="setting-content">
+                                    <div class="setting-title"><i class="fas fa-globe"></i> Public Room</div>
+                                    <div class="setting-desc">Visible to everyone</div>
+                                </div>
+                            </label>
+                            <label class="room-setting">
+                                <input type="radio" name="roomType" value="private">
+                                <div class="setting-content">
+                                    <div class="setting-title"><i class="fas fa-lock"></i> Private Room</div>
+                                    <div class="setting-desc">Hidden from public list</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="setting-section">
+                            <h4 class="setting-section-title">Time Control</h4>
+                            <label class="room-setting">
+                                <input type="radio" name="timeControl" value="unlimited" checked>
+                                <div class="setting-content">
+                                    <div class="setting-title"><i class="fas fa-infinity"></i> Unlimited</div>
+                                    <div class="setting-desc">No time limit per move</div>
+                                </div>
+                            </label>
+                            <label class="room-setting">
+                                <input type="radio" name="timeControl" value="blitz">
+                                <div class="setting-content">
+                                    <div class="setting-title"><i class="fas fa-bolt"></i> Blitz (3 min)</div>
+                                    <div class="setting-desc">3 minutes per player</div>
+                                </div>
+                            </label>
+                            <label class="room-setting">
+                                <input type="radio" name="timeControl" value="rapid">
+                                <div class="setting-content">
+                                    <div class="setting-title"><i class="fas fa-clock"></i> Rapid (10 min)</div>
+                                    <div class="setting-desc">10 minutes per player</div>
+                                </div>
+                            </label>
+                            <label class="room-setting">
+                                <input type="radio" name="timeControl" value="classical">
+                                <div class="setting-content">
+                                    <div class="setting-title"><i class="fas fa-hourglass-half"></i> Classical (30 min)</div>
+                                    <div class="setting-desc">30 minutes per player</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmCreateBtn" class="confirm-btn"><i class="fas fa-check"></i> CREATE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Standalone Mode Modal -->
+        <div id="standaloneModal" class="among-modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3>STANDALONE MODE</h3>
+                    <button id="closeStandaloneModal" class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="standalone-options">
+                        <button id="playVsAIBtn" class="standalone-option-btn ai-option">
+                            <div class="option-icon"><i class="fas fa-robot"></i></div>
+                            <div class="option-content">
+                                <div class="option-title">Play vs AI</div>
+                                <div class="option-desc">Challenge the smart computer</div>
+                            </div>
+                        </button>
+                        <button id="play2PlayersBtn" class="standalone-option-btn local-option">
+                            <div class="option-icon"><i class="fas fa-users"></i></div>
+                            <div class="option-content">
+                                <div class="option-title">2 Players (Local)</div>
+                                <div class="option-desc">Play together on one device</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <!-- Game Header -->
+        <div class="game-header">
+            <div class="player-info" id="topPlayer">
+                <div class="player-piece" id="topPlayerPiece"></div>
+                <span class="player-name" id="topPlayerName">Opponent</span>
+                <div class="turn-indicator" id="topPlayerTurn"></div>
+                <div class="player-timer" id="topPlayerTimer" style="display: none;">
+                    <i class="fas fa-clock"></i>
+                    <span class="timer-display">
+                        <span id="topTimerMinutes">10</span>:<span id="topTimerSeconds">00</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="room-info">
+                <span id="roomCode">Room: </span>
+                <button id="copyRoomBtn" class="copy-btn" style="display: none;"><i class="fas fa-copy"></i> Copy</button>
+            </div>
+
+            <div class="player-info" id="bottomPlayer">
+                <div class="player-piece" id="bottomPlayerPiece"></div>
+                <span class="player-name" id="bottomPlayerName">You</span>
+                <div class="turn-indicator" id="bottomPlayerTurn"></div>
+                <div class="player-timer" id="bottomPlayerTimer" style="display: none;">
+                    <i class="fas fa-clock"></i>
+                    <span class="timer-display">
+                        <span id="bottomTimerMinutes">10</span>:<span id="bottomTimerSeconds">00</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Board -->
+        <div class="board-container">
+            <div class="board-orientation" id="boardOrientation">
+                <span class="orientation-text" id="orientationText">Your pieces are at the bottom</span>
+            </div>
+            <div id="gameBoard" class="game-board">
+                <!-- Board squares will be generated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Game Status -->
+        <div class="game-status">
+            <p id="statusMessage">Waiting for opponent...</p>
+            <div id="waitingControls" class="waiting-controls" style="display: none;">
+                <button id="exitRoomBtn" class="btn-secondary"><i class="fas fa-door-open"></i> Exit Room</button>
+            </div>
+            <div id="gameStartControls" class="game-start-controls" style="display: none;">
+                <button id="startGameBtn" class="btn-primary"><i class="fas fa-play"></i> Start Game</button>
+                <button id="exitLobbyBtn" class="btn-secondary"><i class="fas fa-door-open"></i> Exit Room</button>
+                <p class="start-info">Both players must click "Start Game" to begin</p>
+            </div>
+            <div id="gameStartCountdown" class="game-countdown" style="display: none;">
+                <p>Game starting in <span id="countdownNumber">3</span>...</p>
+            </div>
+            <div id="gameplayControls" class="gameplay-controls" style="display: none;">
+                <div class="game-actions">
+                    <button id="requestRestartBtn" class="game-btn restart-btn">
+                        <span class="btn-icon"><i class="fas fa-redo-alt"></i></span>
+                        <span class="btn-text">RESTART</span>
+                    </button>
+                    <button id="exitBotGameBtn" class="game-btn exit-btn" style="display: none;">
+                        <span class="btn-icon"><i class="fas fa-door-open"></i></span>
+                        <span class="btn-text">EXIT</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Chat System -->
+        <div class="quick-chat-container">
+            <button id="quickChatBtn" class="quick-chat-btn" title="Quick Chat" style="display: none;">
+                <span class="chat-icon"><i class="fas fa-comments"></i></span>
+                <span class="chat-pulse"></span>
+            </button>
+
+            <!-- Quick Chat Menu -->
+            <div id="quickChatMenu" class="quick-chat-menu" style="display: none;">
+                <div class="quick-chat-header">
+                    <span class="header-icon"><i class="fas fa-comment-dots"></i></span>
+                    Quick Chat
+                </div>
+
+                <!-- Emojis -->
+                <div class="emoji-section">
+                    <div class="section-title">Reactions</div>
+                    <div class="emoji-grid">
+                        <button class="emoji-btn" data-type="emoji" data-value="😢" title="Cry">
+                            <span class="emoji">😢</span>
+                        </button>
+                        <button class="emoji-btn" data-type="emoji" data-value="😂" title="Laugh">
+                            <span class="emoji">😂</span>
+                        </button>
+                        <button class="emoji-btn" data-type="emoji" data-value="😮" title="Wow">
+                            <span class="emoji">😮</span>
+                        </button>
+                        <button class="emoji-btn" data-type="emoji" data-value="🤓" title="Smart">
+                            <span class="emoji">🤓</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Khmer Text -->
+                <div class="text-section">
+                    <div class="section-title">Khmer Messages</div>
+                    <div class="text-grid">
+                        <button class="text-btn" data-type="text" data-value="ចុះចាញ់ទៅពៅ!" title="Give up!">
+                            <span class="text-content">ចុះចាញ់ទៅពៅ!</span>
+                        </button>
+                        <button class="text-btn" data-type="text" data-value="កាក់ណាស់!" title="So funny!">
+                            <span class="text-content">កាក់ណាស់!</span>
+                        </button>
+                        <button class="text-btn" data-type="text" data-value="កុំយំណា!!" title="Don't cry!">
+                            <span class="text-content">កុំយំណា!!</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Test Button -->
+                <div class="quick-chat-footer">
+                    <small>Click to send • 2s cooldown</small>
+                    <button class="test-popup-btn" onclick="testSimplePopup('🧪 Test Popup Works!')"
+                        style="margin-top: 0.5rem; padding: 0.5rem; background: #d4af37; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8rem; width: 100%;"><i class="fas fa-flask"></i>
+                        Test Popup</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-chat-footer">
+            <small>Click to send • 2s cooldown</small>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <div class="winner-announcement">
+                <div class="golden-frame">
+                    <h2 id="winnerText">Victory!</h2>
+                    <div class="victory-icon">👑</div>
+                    <p id="winnerMessage">The temple acknowledges your wisdom!</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="playAgainBtn" class="btn-primary"><i class="fas fa-redo"></i> Battle Again</button>
+                <button id="exitGameBtn" class="btn-secondary"><i class="fas fa-sign-out-alt"></i> Leave Room</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="screen">
+        <div class="loading-content">
+            <div class="temple-loader">
+                <div class="loader-ring"></div>
+                <div class="loader-text">Connecting to Room...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio system removed -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
